@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'signup.dart';
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key}); // Usar super parâmetros
@@ -102,6 +103,13 @@ class LoginPageState extends State<LoginPage> {
                           logger.i(
                               'Logging in with username: $_username and password: $_password');
                         }
+
+                        // Navegar para a página Home
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const HomePage()),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
