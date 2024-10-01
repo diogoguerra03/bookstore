@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'signup.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key}); // Usar super parâmetros
@@ -124,8 +125,12 @@ class LoginPageState extends State<LoginPage> {
                       const Text("Don't have an account?"),
                       TextButton(
                         onPressed: () {
-                          // Substituir print por logger
-                          logger.i('Navigating to sign-up');
+                          // ir para a página de registo
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SignUpPage()),
+                          );
                         },
                         child: const Text('Sign up'),
                       ),
