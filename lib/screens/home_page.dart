@@ -1,97 +1,324 @@
 import 'package:flutter/material.dart';
-import '../widgets/bottom_nav_bar.dart';
+import '../services/book_service.dart'; // Serviço que busca os livros da API
+import '../models/book_model.dart'; // Modelo dos livros
+import '../widgets/bottom_nav_bar.dart'; // Barra de navegação inferior
+import 'genre_page.dart'; // Página de géneros
+import 'detail_page.dart'; // Página de detalhes
 import 'package:logger/logger.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  HomePageState createState() => HomePageState();
+}
+
+class HomePageState extends State<HomePage> {
+  late Future<List<Book>> adventureBooks;
+  late Future<List<Book>> fantasyBooks;
+  late Future<List<Book>> horrorBooks;
+  late Future<List<Book>> mysteryBooks;
+  late Future<List<Book>> searchResults; // Resultados da pesquisa
+
+  final TextEditingController _searchController = TextEditingController();
+  bool isSearching = false; // Para alternar entre pesquisa e géneros
+  String _searchFilter = 'title'; // Opção padrão de pesquisa
+  int _searchPage = 1; // Página atual para a pesquisa
+
+  // Lista de opções para a dropdown box
+  final List<String> _searchOptions = ['title', 'author', 'subject'];
+
+  @override
+  void initState() {
+    super.initState();
+    // Faz as queries para cada género
+    adventureBooks = BookService().fetchBooks('subject=adventure&limit=10', 1);
+    fantasyBooks = BookService().fetchBooks('subject=fantasy&limit=10', 1);
+    horrorBooks = BookService().fetchBooks('subject=horror&limit=10', 1);
+    mysteryBooks = BookService().fetchBooks('subject=mystery&limit=10', 1);
+    searchResults =
+        Future.value([]); // Inicializa a pesquisa com uma lista vazia
+  }
+
+  // Função para realizar a pesquisa
+  void _searchBooks() {
+    String query = _searchController.text.trim();
+    if (query.isNotEmpty) {
+      setState(() {
+        isSearching = true;
+        _searchPage = 1; // Reiniciar a pesquisa para a primeira página
+        searchResults =
+            BookService().fetchBooks('$_searchFilter=$query', _searchPage);
+      });
+    }
+  }
+
+  // Função para carregar mais resultados da pesquisa
+  void _loadMoreSearchResults() {
+    setState(() {
+      _searchPage++;
+      searchResults = BookService().fetchBooks(
+          '$_searchFilter=${_searchController.text.trim()}', _searchPage);
+    });
+  }
+
+  // Função para limpar a pesquisa
+  void _clearSearch() {
+    setState(() {
+      _searchController.clear();
+      isSearching = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          const SizedBox(height: 80), // Espaçamento superior
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center, // Centraliza o Row
-              children: [
-                // Campo de texto para pesquisa
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 1,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: const TextField(
+      appBar: AppBar(
+        title: const Text('BookStore'),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Barra de pesquisa
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
                       decoration: InputDecoration(
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                        hintText: 'Filter by name, genre, etc...',
-                        border: InputBorder.none,
+                        hintText: 'Search...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 15,
+                          horizontal: 20,
+                        ),
                       ),
+                      onChanged: (value) {
+                        if (value.isEmpty) {
+                          _clearSearch(); // Limpa a pesquisa se o campo estiver vazio
+                        }
+                      },
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                // Ícone de pesquisa
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 1,
-                        blurRadius: 5,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.search),
+                  IconButton(
+                    icon: Icon(isSearching ? Icons.clear : Icons.search),
                     onPressed: () {
-                      // Ação de pesquisa
-                      Logger().i('Search button pressed');
+                      if (isSearching) {
+                        _clearSearch();
+                      } else {
+                        _searchBooks();
+                      }
                     },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(
-              height:
-                  40), // Espaçamento entre a barra de pesquisa e o restante conteúdo
-
-          // Conteúdo adicional da página
-          const Center(
-            child: Text(
-              'Main content of Home Page',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            // Dropdown para selecionar tipo de pesquisa
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: DropdownButton<String>(
+                value: _searchFilter,
+                items: _searchOptions.map((String option) {
+                  return DropdownMenuItem<String>(
+                    value: option,
+                    child: Text('Search by $option'),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _searchFilter = newValue!;
+                  });
+                },
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            // Verifica se o utilizador está a pesquisar
+            if (isSearching)
+              buildSearchResults(searchResults) // Exibir resultados da pesquisa
+            else
+              // Exibe as secções de livros por género
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  buildBookSection('Adventure', adventureBooks),
+                  buildBookSection('Fantasy', fantasyBooks),
+                  buildBookSection('Horror', horrorBooks),
+                  buildBookSection('Mystery', mysteryBooks),
+                ],
+              ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 0, // O índice da página atual (Home)
+        currentIndex: 0, // Índice da página atual (Home)
         onTap: (index) {
-          // Navegação com base no índice
-          if (index == 0) {
-            // Já está na Home
-          } else if (index == 1) {
-            Logger().i('Library');
+          if (index == 1) {
+            // Navegação para a página Library
           } else if (index == 2) {
-            Logger().i('Profile');
+            // Navegação para a página Profile
           }
         },
+      ),
+    );
+  }
+
+  // Função para exibir os resultados da pesquisa
+  Widget buildSearchResults(Future<List<Book>> searchResultsFuture) {
+    return FutureBuilder<List<Book>>(
+      future: searchResultsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (snapshot.hasData) {
+          List<Book> books = snapshot.data!;
+          return Column(
+            children: [
+              ListView.builder(
+                shrinkWrap: true,
+                physics:
+                    const NeverScrollableScrollPhysics(), // Evita scroll duplo
+                itemCount: books.length,
+                itemBuilder: (context, index) {
+                  return buildBookItem(books[index]);
+                },
+              ),
+              // Botão para carregar mais resultados da pesquisa
+              TextButton(
+                onPressed: _loadMoreSearchResults,
+                child: const Text('Load more results'),
+              ),
+            ],
+          );
+        } else {
+          return const Center(child: Text('No books found'));
+        }
+      },
+    );
+  }
+
+  // Função para criar uma secção de livros de acordo com o género
+  Widget buildBookSection(String genre, Future<List<Book>> booksFuture) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                genre,
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: const Icon(Icons.arrow_forward),
+                onPressed: () {
+                  // Navega para a GenrePage ao clicar na seta
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GenrePage(genre: genre),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 200, // Altura da área onde os livros vão aparecer
+          child: FutureBuilder<List<Book>>(
+            future: booksFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (snapshot.hasData) {
+                List<Book> books = snapshot.data!;
+                return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: books.length,
+                  itemBuilder: (context, index) {
+                    return buildBookItem(books[index]);
+                  },
+                );
+              } else {
+                return const Center(child: Text('No books found'));
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildBookItem(Book book) {
+    String coverUrl = book.coverId != null
+        ? 'https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg'
+        : 'assets/images/No_Cover.jpg';
+
+    return GestureDetector(
+      onTap: () {
+        // Log o workId do livro
+        Logger().i('Clicked on book with workId: ${book.workId}');
+        // Navegação para a página de detalhes do livro
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailPage(
+              title: book.title,
+              author: book.author,
+              coverId: book.coverId,
+              workId: book.workId,
+              wantToRead: book.wantToRead ?? 0,
+              readingCount: book.readingCount ?? 0,
+              readCount: book.readCount ?? 0,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 120,
+        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 150,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                image: DecorationImage(
+                  image: coverUrl.contains('http')
+                      ? NetworkImage(coverUrl)
+                      : AssetImage(coverUrl) as ImageProvider,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              book.title,
+              style: const TextStyle(fontSize: 16),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              book.author.isNotEmpty ? book.author : 'No author available',
+              style: const TextStyle(fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
