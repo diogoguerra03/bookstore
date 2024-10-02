@@ -28,7 +28,7 @@ class HomePageState extends State<HomePage> {
     fantasyBooks = BookService().fetchBooks('subject=fantasy&limit=10');
     horrorBooks = BookService().fetchBooks('subject=horror&limit=10');
     mysteryBooks = BookService().fetchBooks('subject=mystery&limit=10');
-    searchResults = BookService().fetchBooks('title='); // Inicialmente vazio
+    searchResults = Future.value([]); // Inicializa com uma lista vazia
   }
 
   // Função para realizar a pesquisa
