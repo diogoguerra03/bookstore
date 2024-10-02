@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/book_service.dart'; // Serviço que busca os livros da API
 import '../models/book_model.dart'; // Modelo dos livros
 import '../widgets/bottom_nav_bar.dart'; // Barra de navegação inferior
+import 'genre_page.dart'; // Página de géneros
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -215,7 +216,18 @@ class HomePageState extends State<HomePage> {
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              const Icon(Icons.arrow_forward), // Ícone de seta
+              IconButton(
+                icon: const Icon(Icons.arrow_forward),
+                onPressed: () {
+                  // Navega para a GenrePage ao clicar na seta
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GenrePage(genre: genre),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -249,10 +261,10 @@ class HomePageState extends State<HomePage> {
 
   // Função para construir um item de livro
   Widget buildBookItem(Book book) {
-    // Constroi a URL da capa usando o campo cover_i
+    // Constroi a URL da capa usando o campo coverId, ou usa a imagem local 'No_Cover.jpg' se não houver capa
     String coverUrl = book.coverId != null
         ? 'https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg'
-        : '';
+        : 'assets/images/No_Cover.jpg'; // Imagem de fallback
 
     return Container(
       width: 120,
@@ -265,10 +277,11 @@ class HomePageState extends State<HomePage> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               image: DecorationImage(
-                image: coverUrl.isNotEmpty
+                image: coverUrl.contains(
+                        'http') // Verifica se é uma URL externa ou um asset local
                     ? NetworkImage(coverUrl)
-                    : const AssetImage('assets/images/placeholder.png')
-                        as ImageProvider, // Placeholder se não houver capa
+                    : AssetImage(coverUrl)
+                        as ImageProvider, // Usa a imagem local 'No_Cover.jpg'
                 fit: BoxFit.cover,
               ),
             ),
