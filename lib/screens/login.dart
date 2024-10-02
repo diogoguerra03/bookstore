@@ -102,14 +102,14 @@ class LoginPageState extends State<LoginPage> {
                           // Substituir print por logger
                           logger.i(
                               'Logging in with username: $_username and password: $_password');
-                        }
 
-                        // Navegar para a página Home
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const HomePage()),
-                        );
+                          // Navegar para a página Home
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const HomePage()),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
