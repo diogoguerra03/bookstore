@@ -15,15 +15,36 @@ class HomePageState extends State<HomePage> {
   late Future<List<Book>> fantasyBooks;
   late Future<List<Book>> horrorBooks;
   late Future<List<Book>> mysteryBooks;
+  late Future<List<Book>> searchResults; // Resultados da pesquisa
+
+  final TextEditingController _searchController = TextEditingController();
+  bool isSearching = false; // Para alternar entre pesquisa e géneros
 
   @override
   void initState() {
     super.initState();
     // Faz as queries para cada género
-    adventureBooks = BookService().fetchBooks('subject=adventure');
-    fantasyBooks = BookService().fetchBooks('subject=fantasy');
-    horrorBooks = BookService().fetchBooks('subject=horror');
-    mysteryBooks = BookService().fetchBooks('subject=mystery');
+    adventureBooks = BookService().fetchBooks('subject=adventure&limit=10');
+    fantasyBooks = BookService().fetchBooks('subject=fantasy&limit=10');
+    horrorBooks = BookService().fetchBooks('subject=horror&limit=10');
+    mysteryBooks = BookService().fetchBooks('subject=mystery&limit=10');
+    searchResults = BookService().fetchBooks('title='); // Inicialmente vazio
+  }
+
+  // Função para realizar a pesquisa
+  void _searchBooks() {
+    String query = _searchController.text.trim();
+    if (query.isNotEmpty) {
+      setState(() {
+        isSearching = true;
+        searchResults =
+            BookService().fetchBooks('title=$query'); // Pesquisar por título
+      });
+    } else {
+      setState(() {
+        isSearching = false; // Voltar aos géneros se a pesquisa estiver vazia
+      });
+    }
   }
 
   @override
@@ -43,8 +64,9 @@ class HomePageState extends State<HomePage> {
                 children: [
                   Expanded(
                     child: TextField(
+                      controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Filter by name, genre, etc...',
+                        hintText: 'Search by title...',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -57,18 +79,26 @@ class HomePageState extends State<HomePage> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.search),
-                    onPressed: () {
-                      // Função de busca pode ser implementada aqui
-                    },
+                    onPressed: _searchBooks, // Chama a função de pesquisa
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 10),
-            buildBookSection('Adventure', adventureBooks),
-            buildBookSection('Fantasy', fantasyBooks),
-            buildBookSection('Horror', horrorBooks),
-            buildBookSection('Mystery', mysteryBooks),
+            // Verifica se o utilizador está a pesquisar
+            if (isSearching)
+              buildSearchResults(searchResults) // Exibir resultados da pesquisa
+            else
+              // Exibe as secções de livros por género
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  buildBookSection('Adventure', adventureBooks),
+                  buildBookSection('Fantasy', fantasyBooks),
+                  buildBookSection('Horror', horrorBooks),
+                  buildBookSection('Mystery', mysteryBooks),
+                ],
+              ),
           ],
         ),
       ),
@@ -82,6 +112,32 @@ class HomePageState extends State<HomePage> {
           }
         },
       ),
+    );
+  }
+
+  // Função para exibir os resultados da pesquisa
+  Widget buildSearchResults(Future<List<Book>> searchResultsFuture) {
+    return FutureBuilder<List<Book>>(
+      future: searchResultsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (snapshot.hasData) {
+          List<Book> books = snapshot.data!;
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(), // Evita scroll duplo
+            itemCount: books.length,
+            itemBuilder: (context, index) {
+              return buildBookItem(books[index]);
+            },
+          );
+        } else {
+          return const Center(child: Text('No books found'));
+        }
+      },
     );
   }
 
@@ -100,8 +156,7 @@ class HomePageState extends State<HomePage> {
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              const Icon(Icons
-                  .arrow_forward), // Ícone de seta, pode ter uma ação de navegação
+              const Icon(Icons.arrow_forward), // Ícone de seta
             ],
           ),
         ),
