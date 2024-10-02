@@ -19,16 +19,22 @@ class HomePageState extends State<HomePage> {
 
   final TextEditingController _searchController = TextEditingController();
   bool isSearching = false; // Para alternar entre pesquisa e géneros
+  String _searchFilter = 'title'; // Opção padrão de pesquisa
+  int _searchPage = 1; // Página atual para a pesquisa
+
+  // Lista de opções para a dropdown box
+  final List<String> _searchOptions = ['title', 'author', 'subject'];
 
   @override
   void initState() {
     super.initState();
     // Faz as queries para cada género
-    adventureBooks = BookService().fetchBooks('subject=adventure&limit=10');
-    fantasyBooks = BookService().fetchBooks('subject=fantasy&limit=10');
-    horrorBooks = BookService().fetchBooks('subject=horror&limit=10');
-    mysteryBooks = BookService().fetchBooks('subject=mystery&limit=10');
-    searchResults = Future.value([]); // Inicializa com uma lista vazia
+    adventureBooks = BookService().fetchBooks('subject=adventure&limit=10', 1);
+    fantasyBooks = BookService().fetchBooks('subject=fantasy&limit=10', 1);
+    horrorBooks = BookService().fetchBooks('subject=horror&limit=10', 1);
+    mysteryBooks = BookService().fetchBooks('subject=mystery&limit=10', 1);
+    searchResults =
+        Future.value([]); // Inicializa a pesquisa com uma lista vazia
   }
 
   // Função para realizar a pesquisa
@@ -37,27 +43,41 @@ class HomePageState extends State<HomePage> {
     if (query.isNotEmpty) {
       setState(() {
         isSearching = true;
+        _searchPage = 1; // Reiniciar a pesquisa para a primeira página
         searchResults =
-            BookService().fetchBooks('title=$query'); // Pesquisar por título
-      });
-    } else {
-      setState(() {
-        isSearching = false; // Voltar aos géneros se a pesquisa estiver vazia
+            BookService().fetchBooks('$_searchFilter=$query', _searchPage);
       });
     }
+  }
+
+  // Função para carregar mais resultados da pesquisa
+  void _loadMoreSearchResults() {
+    setState(() {
+      _searchPage++;
+      searchResults = BookService().fetchBooks(
+          '$_searchFilter=${_searchController.text.trim()}', _searchPage);
+    });
+  }
+
+  // Função para limpar a pesquisa
+  void _clearSearch() {
+    setState(() {
+      _searchController.clear();
+      isSearching = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Books by Genre'),
+        title: const Text('BookStore'),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Adiciona a barra de pesquisa
+            // Barra de pesquisa
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
@@ -66,7 +86,7 @@ class HomePageState extends State<HomePage> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Search by title...',
+                        hintText: 'Search...',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -75,13 +95,42 @@ class HomePageState extends State<HomePage> {
                           horizontal: 20,
                         ),
                       ),
+                      onChanged: (value) {
+                        if (value.isEmpty) {
+                          _clearSearch(); // Limpa a pesquisa se o campo estiver vazio
+                        }
+                      },
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.search),
-                    onPressed: _searchBooks, // Chama a função de pesquisa
+                    icon: Icon(isSearching ? Icons.clear : Icons.search),
+                    onPressed: () {
+                      if (isSearching) {
+                        _clearSearch();
+                      } else {
+                        _searchBooks();
+                      }
+                    },
                   ),
                 ],
+              ),
+            ),
+            // Dropdown para selecionar tipo de pesquisa
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: DropdownButton<String>(
+                value: _searchFilter,
+                items: _searchOptions.map((String option) {
+                  return DropdownMenuItem<String>(
+                    value: option,
+                    child: Text('Search by $option'),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _searchFilter = newValue!;
+                  });
+                },
               ),
             ),
             const SizedBox(height: 10),
@@ -106,9 +155,9 @@ class HomePageState extends State<HomePage> {
         currentIndex: 0, // Índice da página atual (Home)
         onTap: (index) {
           if (index == 1) {
-            // Função para navegação para a página Library
+            // Navegação para a página Library
           } else if (index == 2) {
-            // Função para navegação para a página Profile
+            // Navegação para a página Profile
           }
         },
       ),
@@ -126,13 +175,23 @@ class HomePageState extends State<HomePage> {
           return Center(child: Text('Error: ${snapshot.error}'));
         } else if (snapshot.hasData) {
           List<Book> books = snapshot.data!;
-          return ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(), // Evita scroll duplo
-            itemCount: books.length,
-            itemBuilder: (context, index) {
-              return buildBookItem(books[index]);
-            },
+          return Column(
+            children: [
+              ListView.builder(
+                shrinkWrap: true,
+                physics:
+                    const NeverScrollableScrollPhysics(), // Evita scroll duplo
+                itemCount: books.length,
+                itemBuilder: (context, index) {
+                  return buildBookItem(books[index]);
+                },
+              ),
+              // Botão para carregar mais resultados da pesquisa
+              TextButton(
+                onPressed: _loadMoreSearchResults,
+                child: const Text('Load more results'),
+              ),
+            ],
           );
         } else {
           return const Center(child: Text('No books found'));
