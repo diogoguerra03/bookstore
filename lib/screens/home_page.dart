@@ -3,6 +3,8 @@ import '../services/book_service.dart'; // Serviço que busca os livros da API
 import '../models/book_model.dart'; // Modelo dos livros
 import '../widgets/bottom_nav_bar.dart'; // Barra de navegação inferior
 import 'genre_page.dart'; // Página de géneros
+import 'detail_page.dart'; // Página de detalhes
+import 'package:logger/logger.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -259,47 +261,64 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  // Função para construir um item de livro
   Widget buildBookItem(Book book) {
-    // Constroi a URL da capa usando o campo coverId, ou usa a imagem local 'No_Cover.jpg' se não houver capa
     String coverUrl = book.coverId != null
         ? 'https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg'
-        : 'assets/images/No_Cover.jpg'; // Imagem de fallback
+        : 'assets/images/No_Cover.jpg';
 
-    return Container(
-      width: 120,
-      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 150,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              image: DecorationImage(
-                image: coverUrl.contains(
-                        'http') // Verifica se é uma URL externa ou um asset local
-                    ? NetworkImage(coverUrl)
-                    : AssetImage(coverUrl)
-                        as ImageProvider, // Usa a imagem local 'No_Cover.jpg'
-                fit: BoxFit.cover,
-              ),
+    return GestureDetector(
+      onTap: () {
+        // Log o workId do livro
+        Logger().i('Clicked on book with workId: ${book.workId}');
+        // Navegação para a página de detalhes do livro
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailPage(
+              title: book.title,
+              author: book.author,
+              coverId: book.coverId,
+              workId: book.workId,
+              wantToRead: book.wantToRead ?? 0,
+              readingCount: book.readingCount ?? 0,
+              readCount: book.readCount ?? 0,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            book.title,
-            style: const TextStyle(fontSize: 16),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            book.author.isNotEmpty ? book.author : 'No author available',
-            style: const TextStyle(fontSize: 12),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+        );
+      },
+      child: Container(
+        width: 120,
+        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 150,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                image: DecorationImage(
+                  image: coverUrl.contains('http')
+                      ? NetworkImage(coverUrl)
+                      : AssetImage(coverUrl) as ImageProvider,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              book.title,
+              style: const TextStyle(fontSize: 16),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              book.author.isNotEmpty ? book.author : 'No author available',
+              style: const TextStyle(fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
