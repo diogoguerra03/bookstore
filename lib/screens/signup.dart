@@ -34,7 +34,7 @@ class SignUpPageState extends State<SignUpPage> {
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    'Book Store XPTO',
+                    'BookStore XPTO',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
