@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import '../services/database_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -148,6 +149,11 @@ class SignUpPageState extends State<SignUpPage> {
                               .addUser(_username, _password);
 
                           if (userCreatedsuccessfully) {
+                            SharedPreferences prefs =
+                                await SharedPreferences.getInstance();
+                            await prefs.setString(
+                                'username', _username); // Armazena o username
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('User created successfully'),
