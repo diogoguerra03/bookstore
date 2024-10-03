@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'signup.dart';
 import 'home_page.dart';
+import '../services/database_helper.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key}); // Usar super parâmetros
+  const LoginPage({super.key});
 
   @override
-  LoginPageState createState() => LoginPageState(); // Tornar a classe pública
+  LoginPageState createState() => LoginPageState();
 }
 
 class LoginPageState extends State<LoginPage> {
@@ -95,14 +96,26 @@ class LoginPageState extends State<LoginPage> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
-                          // Navegar para a página Home
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const HomePage()),
-                          );
+                          bool authenticated = await DatabaseHelper()
+                              .authenticateUser(_username, _password);
+
+                          if (authenticated) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const HomePage()),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Invalid username or password'),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -127,7 +140,6 @@ class LoginPageState extends State<LoginPage> {
                       const Text("Don't have an account?"),
                       TextButton(
                         onPressed: () {
-                          // ir para a página de registo
                           Navigator.push(
                             context,
                             MaterialPageRoute(

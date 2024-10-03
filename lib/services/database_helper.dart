@@ -61,21 +61,16 @@ class DatabaseHelper {
   Future<bool> addUser(String username, String password) async {
     final db = await database;
 
-    // Gerar chave a partir da senha
-    final key =
-        _generateKey('sua-senha-secreta'); // Substitua por uma senha secreta
-    final iv = encrypt.IV.fromLength(16); // IV aleatório
-
-    final encrypter = encrypt.Encrypter(encrypt.AES(key));
-
-    final encryptedPassword = encrypter.encrypt(password, iv: iv).base64;
+    // Crypto password with SHA-256
+    final passwordEncoded = utf8.encode(password);
+    final passwordHash = sha256.convert(passwordEncoded).toString();
 
     try {
       await db.insert(
         'users',
         {
           'username': username,
-          'password': encryptedPassword,
+          'password': passwordHash,
         },
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
@@ -98,5 +93,30 @@ class DatabaseHelper {
         password: maps[i]['password'],
       );
     });
+  }
+
+  // Função para dar delete dos utilizadores
+  Future<void> deleteAllUsers() async {
+    final db = await database; // Obtém a instância do banco de dados
+    await db.delete(
+      'users', // Nome da tabela
+    );
+  }
+
+  // Dentro do seu arquivo database_helper.dart
+  Future<bool> authenticateUser(String username, String password) async {
+    final db = await database; // Obtém a instância do banco de dados
+
+    final passwordEncoded = utf8.encode(password);
+    final passwordHash = sha256.convert(passwordEncoded).toString();
+
+    // Verifica no banco de dados
+    final List<Map<String, dynamic>> result = await db.query(
+      'users',
+      where: 'username = ? AND password = ?',
+      whereArgs: [username, passwordHash], // Compara a senha criptografada
+    );
+
+    return result.isNotEmpty; // Retorna true se o usuário existir
   }
 }
