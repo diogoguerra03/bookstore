@@ -174,6 +174,82 @@ class HomePageState extends State<HomePage> {
     );
   }
 
+  Widget buildSearchBookItem(Book book) {
+    String coverUrl = book.coverId != 0
+        ? 'https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg'
+        : 'assets/images/No_Cover.jpg'; // Imagem alternativa
+
+    return GestureDetector(
+      onTap: () {
+        // Navegação para a página de detalhes do livro
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailPage(
+              title: book.title,
+              author: book.author,
+              coverId: book.coverId,
+              workId: book.workId,
+              wantToRead: book.wantToRead ?? 0,
+              readingCount: book.readingCount ?? 0,
+              readCount: book.readCount ?? 0,
+            ),
+          ),
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: Image.network(
+                  coverUrl,
+                  height: 80,
+                  width: 60,
+                  fit: BoxFit.cover,
+                  errorBuilder: (BuildContext context, Object error,
+                      StackTrace? stackTrace) {
+                    // Retorna uma imagem padrão em caso de erro
+                    return Image.asset('assets/images/No_Cover.jpg',
+                        height: 80, width: 60);
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      book.title,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      book.author.isNotEmpty
+                          ? book.author
+                          : 'No author available',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget buildSearchResults(Future<List<Book>> searchResultsFuture) {
     return FutureBuilder<List<Book>>(
       future: searchResultsFuture,
@@ -188,10 +264,12 @@ class HomePageState extends State<HomePage> {
             children: [
               ListView.builder(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+                physics:
+                    const NeverScrollableScrollPhysics(), // Evitar scroll duplo
                 itemCount: books.length,
                 itemBuilder: (context, index) {
-                  return buildBookItem(books[index]);
+                  return buildSearchBookItem(
+                      books[index]); // Usar a nova função aqui
                 },
               ),
               TextButton(
