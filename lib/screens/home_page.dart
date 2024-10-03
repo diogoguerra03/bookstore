@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../services/book_service.dart'; // Serviço que busca os livros da API
-import '../models/book_model.dart'; // Modelo dos livros
-import '../widgets/bottom_nav_bar.dart'; // Barra de navegação inferior
-import 'genre_page.dart'; // Página de géneros
-import 'detail_page.dart'; // Página de detalhes
+import '../services/book_service.dart';
+import '../models/book_model.dart';
+import '../widgets/bottom_nav_bar.dart';
+import 'genre_page.dart';
+import 'detail_page.dart';
 import 'package:logger/logger.dart';
+import '../services/database_helper.dart';
+import '../models/user_model.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,42 +20,50 @@ class HomePageState extends State<HomePage> {
   late Future<List<Book>> fantasyBooks;
   late Future<List<Book>> horrorBooks;
   late Future<List<Book>> mysteryBooks;
-  late Future<List<Book>> searchResults; // Resultados da pesquisa
+  late Future<List<Book>> searchResults;
+  bool isGenrePage = false; // Novo estado para controlar a navegação
 
   final TextEditingController _searchController = TextEditingController();
-  bool isSearching = false; // Para alternar entre pesquisa e géneros
-  String _searchFilter = 'title'; // Opção padrão de pesquisa
-  int _searchPage = 1; // Página atual para a pesquisa
+  bool isSearching = false;
+  String _searchFilter = 'title';
+  int _searchPage = 1;
 
-  // Lista de opções para a dropdown box
   final List<String> _searchOptions = ['title', 'author', 'subject'];
+
+  late Future<List<User>> _users;
 
   @override
   void initState() {
     super.initState();
-    // Faz as queries para cada género
     adventureBooks = BookService().fetchBooks('subject=adventure&limit=10', 1);
     fantasyBooks = BookService().fetchBooks('subject=fantasy&limit=10', 1);
     horrorBooks = BookService().fetchBooks('subject=horror&limit=10', 1);
     mysteryBooks = BookService().fetchBooks('subject=mystery&limit=10', 1);
-    searchResults =
-        Future.value([]); // Inicializa a pesquisa com uma lista vazia
+    searchResults = Future.value([]);
+
+    _users = DatabaseHelper().getAllUsers();
+
+    _users.then((userList) {
+      for (var user in userList) {
+        Logger().i('User: ${user.username}');
+      }
+    }).catchError((error) {
+      Logger().e('Error fetching users: $error');
+    });
   }
 
-  // Função para realizar a pesquisa
   void _searchBooks() {
     String query = _searchController.text.trim();
     if (query.isNotEmpty) {
       setState(() {
         isSearching = true;
-        _searchPage = 1; // Reiniciar a pesquisa para a primeira página
+        _searchPage = 1;
         searchResults =
             BookService().fetchBooks('$_searchFilter=$query', _searchPage);
       });
     }
   }
 
-  // Função para carregar mais resultados da pesquisa
   void _loadMoreSearchResults() {
     setState(() {
       _searchPage++;
@@ -62,7 +72,6 @@ class HomePageState extends State<HomePage> {
     });
   }
 
-  // Função para limpar a pesquisa
   void _clearSearch() {
     setState(() {
       _searchController.clear();
@@ -100,7 +109,7 @@ class HomePageState extends State<HomePage> {
                       ),
                       onChanged: (value) {
                         if (value.isEmpty) {
-                          _clearSearch(); // Limpa a pesquisa se o campo estiver vazio
+                          _clearSearch();
                         }
                       },
                     ),
@@ -137,11 +146,9 @@ class HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 10),
-            // Verifica se o utilizador está a pesquisar
             if (isSearching)
-              buildSearchResults(searchResults) // Exibir resultados da pesquisa
+              buildSearchResults(searchResults)
             else
-              // Exibe as secções de livros por género
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -155,7 +162,7 @@ class HomePageState extends State<HomePage> {
         ),
       ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 0, // Índice da página atual (Home)
+        currentIndex: 0,
         onTap: (index) {
           if (index == 1) {
             // Navegação para a página Library
@@ -167,7 +174,6 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  // Função para exibir os resultados da pesquisa
   Widget buildSearchResults(Future<List<Book>> searchResultsFuture) {
     return FutureBuilder<List<Book>>(
       future: searchResultsFuture,
@@ -182,14 +188,12 @@ class HomePageState extends State<HomePage> {
             children: [
               ListView.builder(
                 shrinkWrap: true,
-                physics:
-                    const NeverScrollableScrollPhysics(), // Evita scroll duplo
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: books.length,
                 itemBuilder: (context, index) {
                   return buildBookItem(books[index]);
                 },
               ),
-              // Botão para carregar mais resultados da pesquisa
               TextButton(
                 onPressed: _loadMoreSearchResults,
                 child: const Text('Load more results'),
@@ -262,7 +266,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Widget buildBookItem(Book book) {
-    String coverUrl = book.coverId != null
+    String coverUrl = book.coverId != 0
         ? 'https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg'
         : 'assets/images/No_Cover.jpg';
 

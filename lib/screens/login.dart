@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 import 'signup.dart';
 import 'home_page.dart';
 
@@ -12,7 +11,6 @@ class LoginPage extends StatefulWidget {
 
 class LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final logger = Logger(); // Usar logger em vez de print
   String _username = '';
   String _password = '';
 
@@ -99,10 +97,6 @@ class LoginPageState extends State<LoginPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState?.validate() ?? false) {
-                          // Substituir print por logger
-                          logger.i(
-                              'Logging in with username: $_username and password: $_password');
-
                           // Navegar para a página Home
                           Navigator.pushReplacement(
                             context,

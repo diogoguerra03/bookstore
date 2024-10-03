@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 import 'home_page.dart';
+import '../services/database_helper.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -86,6 +86,10 @@ class SignUpPageState extends State<SignUpPage> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
                       }
+                      // Verifica se a senha tem mais de 8 caracteres
+                      if (value.length < 8) {
+                        return 'Password must be at least 8 characters';
+                      }
                       return null;
                     },
                   ),
@@ -124,19 +128,43 @@ class SignUpPageState extends State<SignUpPage> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
-                          // Ação de registo aqui
-                          Logger().i('Username: $_username');
-                        }
+                          bool usernameExists = await DatabaseHelper()
+                              .checkUsernameExists(_username);
 
-                        // Navega para a Home Page
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const HomePage(),
-                          ),
-                        );
+                          if (usernameExists) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Username already exists'),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                            return;
+                          }
+
+                          bool userCreatedsuccessfully = await DatabaseHelper()
+                              .addUser(_username, _password);
+
+                          if (userCreatedsuccessfully) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('User created successfully'),
+                                backgroundColor: Colors.green,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+
+                          // Navega para a Home Page
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HomePage(),
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(

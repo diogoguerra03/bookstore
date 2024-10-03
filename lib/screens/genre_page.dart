@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/book_service.dart';
 import '../models/book_model.dart';
+import 'detail_page.dart'; // Certifique-se de importar a página de detalhes
 
 class GenrePage extends StatefulWidget {
   final String genre;
@@ -58,16 +59,35 @@ class GenrePageState extends State<GenrePage> {
               itemBuilder: (context, index) {
                 if (index < books.length) {
                   // Exibir livros
-                  String coverUrl = books[index].coverId != null
+                  String coverUrl = books[index].coverId != 0
                       ? 'https://covers.openlibrary.org/b/id/${books[index].coverId}-L.jpg'
                       : 'assets/images/No_Cover.jpg'; // Imagem alternativa
 
-                  return ListTile(
-                    leading: Image.network(coverUrl),
-                    title: Text(books[index].title),
-                    subtitle: Text(books[index].author.isNotEmpty
-                        ? books[index].author
-                        : 'Unknown author'),
+                  return GestureDetector(
+                    onTap: () {
+                      // Navegar para a página de detalhes ao clicar no livro
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailPage(
+                            title: books[index].title,
+                            author: books[index].author,
+                            coverId: books[index].coverId,
+                            workId: books[index].workId,
+                            wantToRead: books[index].wantToRead ?? 0,
+                            readingCount: books[index].readingCount ?? 0,
+                            readCount: books[index].readCount ?? 0,
+                          ),
+                        ),
+                      );
+                    },
+                    child: ListTile(
+                      leading: Image.network(coverUrl),
+                      title: Text(books[index].title),
+                      subtitle: Text(books[index].author.isNotEmpty
+                          ? books[index].author
+                          : 'Unknown author'),
+                    ),
                   );
                 } else {
                   // Botão "Load More"
