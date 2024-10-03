@@ -7,7 +7,7 @@ import 'detail_page.dart';
 import 'package:logger/logger.dart';
 import '../services/database_helper.dart';
 import '../models/user_model.dart';
-import 'profile_page.dart';
+import 'auth/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

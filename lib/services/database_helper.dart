@@ -119,4 +119,41 @@ class DatabaseHelper {
 
     return result.isNotEmpty; // Retorna true se o usuário existir
   }
+
+  Future<bool> changePassword(
+      String username, String currentPassword, String newPassword) async {
+    final db = await database;
+
+    // Aqui, você deve verificar se a senha atual está correta antes de proceder
+    final user = await db.query(
+      'users',
+      where: 'username = ?',
+      whereArgs: [username],
+    );
+
+    if (user.isNotEmpty) {
+      final currentPasswordEncoded = utf8.encode(currentPassword);
+      final currentEncryptedPassword =
+          sha256.convert(currentPasswordEncoded).toString();
+
+      if (user[0]['password'] == currentEncryptedPassword) {
+        // Atualiza a senha
+        final newEncodedPassword = utf8.encode(newPassword);
+        final newEncryptedPassword =
+            sha256.convert(newEncodedPassword).toString();
+
+        await db.update(
+          'users',
+          {'password': newEncryptedPassword},
+          where: 'username = ?',
+          whereArgs: [username],
+        );
+
+        return true; // Senha alterada com sucesso
+      }
+    }
+
+    // Se o usuário não existir ou a senha atual não corresponder, retorne false
+    return false; // Senha atual não corresponde
+  }
 }

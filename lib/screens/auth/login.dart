@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
-import '../services/database_helper.dart';
+import 'signup.dart';
+import '../home_page.dart';
+import '../../services/database_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  SignUpPageState createState() => SignUpPageState();
+  LoginPageState createState() => LoginPageState();
 }
 
-class SignUpPageState extends State<SignUpPage> {
+class LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   String _username = '';
   String _password = '';
-  String _confirmPassword = '';
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class SignUpPageState extends State<SignUpPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Image.asset(
-                    'assets/images/logo.png', // Certifica-te de que este caminho está correto
+                    'assets/images/logo.png',
                     height: 150,
                   ),
                   const SizedBox(height: 20),
@@ -87,89 +87,41 @@ class SignUpPageState extends State<SignUpPage> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
                       }
-                      // Verifica se a senha tem mais de 8 caracteres
-                      if (value.length < 8) {
-                        return 'Password must be at least 8 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Campo de Confirm Password
-                  TextFormField(
-                    decoration: InputDecoration(
-                      hintText: 'Confirm password',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 15, horizontal: 20),
-                    ),
-                    obscureText: true,
-                    onChanged: (value) {
-                      setState(() {
-                        _confirmPassword = value;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please confirm your password';
-                      }
-                      if (value != _password) {
-                        return 'Passwords do not match';
-                      }
                       return null;
                     },
                   ),
                   const SizedBox(height: 40),
 
-                  // Botão de Sign Up
+                  // Botão de Login
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
-                          bool usernameExists = await DatabaseHelper()
-                              .checkUsernameExists(_username);
+                          bool authenticated = await DatabaseHelper()
+                              .authenticateUser(_username, _password);
 
-                          if (usernameExists) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Username already exists'),
-                                backgroundColor: Colors.red,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                            return;
-                          }
-
-                          bool userCreatedsuccessfully = await DatabaseHelper()
-                              .addUser(_username, _password);
-
-                          if (userCreatedsuccessfully) {
+                          if (authenticated) {
                             SharedPreferences prefs =
                                 await SharedPreferences.getInstance();
                             await prefs.setString(
                                 'username', _username); // Armazena o username
 
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const HomePage()),
+                            );
+                          } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('User created successfully'),
-                                backgroundColor: Colors.green,
+                                content: Text('Invalid username or password'),
+                                backgroundColor: Colors.red,
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
                           }
-
-                          // Navega para a Home Page
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const HomePage(),
-                            ),
-                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -179,7 +131,7 @@ class SignUpPageState extends State<SignUpPage> {
                         backgroundColor: Colors.blue,
                       ),
                       child: const Text(
-                        'Sign up',
+                        'Login',
                         style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
@@ -187,16 +139,20 @@ class SignUpPageState extends State<SignUpPage> {
 
                   const SizedBox(height: 20),
 
-                  // Link para Sign In
+                  // Link para se registar
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Have an account?"),
+                      const Text("Don't have an account?"),
                       TextButton(
                         onPressed: () {
-                          Navigator.pop(context); // Volta à página de login
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SignUpPage()),
+                          );
                         },
-                        child: const Text('Sign in'),
+                        child: const Text('Sign up'),
                       ),
                     ],
                   ),
