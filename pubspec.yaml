@@ -11,10 +11,11 @@ dependencies:
     sdk: flutter
   logger: ^1.0.0 # Para logs
   http: ^0.13.4 # Para requisições HTTP
-  encrypt: ^5.0.0  # Para criptografia
+  encrypt: ^5.0.0 # Para criptografia
   sqflite: ^2.0.0+4 # Para usar o SQLite
-  path: ^1.8.0  # Para trabalhar com caminhos
+  path: ^1.8.0 # Para trabalhar com caminhos
   crypto: ^3.0.1 # Para criptografia
+  shared_preferences: ^2.0.6 # Para salvar dados localmente
 
 dev_dependencies:
   flutter_test:

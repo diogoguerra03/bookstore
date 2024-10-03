@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'signup.dart';
 import 'home_page.dart';
 import '../services/database_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -102,6 +103,11 @@ class LoginPageState extends State<LoginPage> {
                               .authenticateUser(_username, _password);
 
                           if (authenticated) {
+                            SharedPreferences prefs =
+                                await SharedPreferences.getInstance();
+                            await prefs.setString(
+                                'username', _username); // Armazena o username
+
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(

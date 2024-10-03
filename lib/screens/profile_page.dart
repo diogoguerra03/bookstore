@@ -1,10 +1,45 @@
+import 'package:bookstore/screens/home_page.dart';
 import 'package:flutter/material.dart';
-import 'login.dart'; // Importar a página de login
-import 'home_page.dart'; // Importar a página inicial
+import 'package:shared_preferences/shared_preferences.dart';
+import 'login.dart';
 import '../widgets/bottom_nav_bar.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  ProfilePageState createState() => ProfilePageState();
+}
+
+class ProfilePageState extends State<ProfilePage> {
+  String username = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  // Função para carregar o nome de utilizador
+  void _loadUserName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      username = prefs.getString('username') ??
+          'Unknown User'; // Valor padrão se não existir
+    });
+  }
+
+  // Função para fazer logout
+  void _logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('username'); // Remove o username do SharedPreferences
+
+    // Navega de volta para a página de login
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,65 +50,55 @@ class ProfilePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            // Simulando um ícone de usuário
             const CircleAvatar(
-              radius: 50,
-              child: Icon(
-                Icons.person,
-                size: 50,
-              ),
+              radius: 40,
+              child: Icon(Icons.person, size: 50),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Username',
-              style: TextStyle(fontSize: 24),
-            ),
-            const SizedBox(height: 20),
+            Text(username,
+                style: const TextStyle(
+                    fontSize: 24)), // Exibe o nome de utilizador
+            const SizedBox(height: 10),
             const Text('Playlists - 3'),
             const Text('Saved books - 3'),
             const SizedBox(height: 40),
-            // Botão para mudar a senha (apenas estético por enquanto)
+
             SizedBox(
-              width: double.infinity,
-              height: 50,
+              width: 200, // Defina o tamanho desejado
+              height: 40,
               child: ElevatedButton(
                 onPressed: () {
-                  // Ação para mudar a senha
+                  // Lógica para mudar a senha
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
+                  backgroundColor: Colors.blue,
                 ),
                 child: const Text(
                   'Change password',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            // Botão de Logout
+
+            // Botão de Logout com tamanho reduzido
             SizedBox(
-              width: double.infinity,
-              height: 50,
+              width: 150, // Defina o tamanho desejado
+              height: 40,
               child: ElevatedButton(
-                onPressed: () {
-                  // Navegar de volta para a página de login
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                  );
-                },
+                onPressed: _logout,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
+                  backgroundColor: Colors.red,
                 ),
                 child: const Text(
                   'Logout',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
             ),
