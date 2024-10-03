@@ -7,6 +7,7 @@ import 'detail_page.dart';
 import 'package:logger/logger.dart';
 import '../services/database_helper.dart';
 import '../models/user_model.dart';
+import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -83,8 +84,7 @@ class HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('BookStore'),
-      ),
+          title: const Text('BookStore'), automaticallyImplyLeading: false),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,6 +168,12 @@ class HomePageState extends State<HomePage> {
             // Navegação para a página Library
           } else if (index == 2) {
             // Navegação para a página Profile
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ProfilePage(),
+              ),
+            );
           }
         },
       ),
