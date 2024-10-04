@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -15,14 +13,7 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
   final _formKey = GlobalKey<FormState>();
   String _currentPassword = '';
   String _newPassword = '';
-  // ignore: unused_field
   String _confirmNewPassword = '';
-
-  String _encryptPassword(String password) {
-    final passwordEncoded = utf8.encode(password);
-    final passwordHash = sha256.convert(passwordEncoded).toString();
-    return passwordHash;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,27 +88,24 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
                     if (_formKey.currentState?.validate() ?? false) {
                       SharedPreferences prefs =
                           await SharedPreferences.getInstance();
-                      String username = prefs.getString('username') ?? '';
+                      String email = prefs.getString('email') ??
+                          ''; // Recupera o e-mail do usuário
 
-                      // Criptografa a senha atual
-                      String encryptedCurrentPassword =
-                          _encryptPassword(_currentPassword);
+                      // Verifica se o e-mail é válido
+                      if (email.isNotEmpty) {
+                        try {
+                          // Reautentica o usuário com a senha atual
+                          UserCredential userCredential = await FirebaseAuth
+                              .instance
+                              .signInWithEmailAndPassword(
+                            email: email,
+                            password: _currentPassword,
+                          );
 
-                      // Referência ao usuário no Firebase
-                      DatabaseReference ref =
-                          FirebaseDatabase.instance.ref('users/$username');
+                          // Atualiza a senha no Firebase Auth
+                          await userCredential.user!
+                              .updatePassword(_newPassword);
 
-                      // Obtém os dados do utilizador
-                      final snapshot = await ref.once();
-                      if (snapshot.snapshot.value != null) {
-                        final data =
-                            snapshot.snapshot.value as Map<dynamic, dynamic>;
-
-                        // Verifica a senha atual
-                        if (data['password'] == encryptedCurrentPassword) {
-                          // Atualiza a senha
-                          await ref.update(
-                              {'password': _encryptPassword(_newPassword)});
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Password changed successfully'),
@@ -127,17 +115,17 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
                           );
                           Navigator.pop(
                               context); // Volta para a página de perfil
-                        } else {
+                        } catch (e) {
+                          // Erros de autenticação ou atualização
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Current password is incorrect'),
+                              content: Text('Failed to change password'),
                               backgroundColor: Colors.red,
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
                         }
                       } else {
-                        // ignore: use_build_context_synchronously
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('User not found'),

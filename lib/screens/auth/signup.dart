@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../home_page.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,8 +16,8 @@ class SignUpPage extends StatefulWidget {
 class SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
   String _username = '';
+  String _email = '';
   String _password = '';
-  // ignore: unused_field
   String _confirmPassword = '';
 
   @override
@@ -45,6 +46,30 @@ class SignUpPageState extends State<SignUpPage> {
                     ),
                   ),
                   const SizedBox(height: 40),
+
+                  // Campo de E-mail
+                  TextFormField(
+                    decoration: InputDecoration(
+                      hintText: 'Email',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 15, horizontal: 20),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _email = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
 
                   // Campo de Username
                   TextFormField(
@@ -133,48 +158,58 @@ class SignUpPageState extends State<SignUpPage> {
                     child: ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
-                          DatabaseReference ref =
-                              FirebaseDatabase.instance.ref('users/$_username');
-
                           // Verifica se o utilizador já existe
-                          final snapshot = await ref.once();
-                          if (snapshot.snapshot.value != null) {
+                          try {
+                            // Tenta criar o utilizador no Firebase Auth
+                            UserCredential userCredential = await FirebaseAuth
+                                .instance
+                                .createUserWithEmailAndPassword(
+                              email: _email,
+                              password: _password,
+                            );
+
+                            String uid = userCredential
+                                .user!.uid; // Obtém o UID do usuário
+
+                            // Adiciona o utilizador ao Firebase Realtime Database
+                            await FirebaseDatabase.instance
+                                .ref('users/$uid')
+                                .set({
+                              'username': _username,
+                              'email': _email,
+                            });
+
+                            // Armazena o username no SharedPreferences
+                            SharedPreferences prefs =
+                                await SharedPreferences.getInstance();
+                            await prefs.setString('username', _username);
+                            await prefs.setString('email', _email);
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Username already exists'),
+                                content: Text('User created successfully!'),
+                                backgroundColor: Colors.green,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+
+                            // Navega para a Home Page
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const HomePage(),
+                              ),
+                            );
+                          } on FirebaseAuthException catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content:
+                                    Text(e.message ?? 'Failed to create user'),
                                 backgroundColor: Colors.red,
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
-                            return;
                           }
-
-                          // Cria o utilizador
-                          String encryptedPassword =
-                              _encryptPassword(_password);
-
-                          // Adiciona o utilizador ao Firebase
-                          await ref.set({
-                            'username': _username,
-                            'password': encryptedPassword,
-                          }).then((_) {
-                            print('User added successfully');
-                          }).catchError((error) {
-                            print('Failed to add user: $error');
-                          });
-
-                          // Armazena o username no SharedPreferences
-                          SharedPreferences prefs =
-                              await SharedPreferences.getInstance();
-                          await prefs.setString('username', _username);
-
-                          // Navega para a Home Page
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const HomePage(),
-                            ),
-                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -212,13 +247,5 @@ class SignUpPageState extends State<SignUpPage> {
         ),
       ),
     );
-  }
-
-  // Função para encriptar a senha
-  String _encryptPassword(String password) {
-    final passwordEncoded = utf8.encode(password);
-    final passwordHash = sha256.convert(passwordEncoded).toString();
-
-    return passwordHash;
   }
 }

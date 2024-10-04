@@ -18,6 +18,7 @@ dependencies:
   shared_preferences: ^2.0.6 # Para salvar dados localmente
   firebase_core: ^3.6.0
   firebase_database: ^11.1.4
+  firebase_auth: ^5.3.1
 
 
 dev_dependencies:

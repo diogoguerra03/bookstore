@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'signup.dart';
 import '../home_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart'; // Importação do Firebase Database
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,7 +14,7 @@ class LoginPage extends StatefulWidget {
 
 class LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  String _username = '';
+  String _email = '';
   String _password = '';
 
   @override
@@ -45,10 +44,10 @@ class LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 40),
 
-                  // Campo de Username
+                  // Campo de E-mail
                   TextFormField(
                     decoration: InputDecoration(
-                      hintText: 'Username',
+                      hintText: 'Email',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -57,12 +56,12 @@ class LoginPageState extends State<LoginPage> {
                     ),
                     onChanged: (value) {
                       setState(() {
-                        _username = value;
+                        _email = value;
                       });
                     },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your username';
+                        return 'Please enter your email';
                       }
                       return null;
                     },
@@ -101,43 +100,59 @@ class LoginPageState extends State<LoginPage> {
                     child: ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
-                          // Verifica se o utilizador existe e se a senha está correta
-                          DatabaseReference ref =
-                              FirebaseDatabase.instance.ref('users/$_username');
-                          final snapshot = await ref.once();
+                          try {
+                            // Autentica o usuário com email e senha
+                            UserCredential userCredential = await FirebaseAuth
+                                .instance
+                                .signInWithEmailAndPassword(
+                              email: _email,
+                              password: _password,
+                            );
 
-                          if (snapshot.snapshot.value != null) {
-                            final data = snapshot.snapshot.value
-                                as Map<dynamic, dynamic>;
-                            String encryptedPassword =
-                                _encryptPassword(_password);
-                            if (data['password'] == encryptedPassword) {
-                              // Senha correta
+                            // Busca o UID do usuário
+                            String uid = userCredential.user!.uid;
+
+                            // Busca o username na Realtime Database
+                            DatabaseReference ref =
+                                FirebaseDatabase.instance.ref('users/$uid');
+                            final snapshot = await ref.once();
+
+                            if (snapshot.snapshot.value != null) {
+                              // Armazena o username nas Shared Preferences
                               SharedPreferences prefs =
                                   await SharedPreferences.getInstance();
+                              await prefs.setString('email', _email);
                               await prefs.setString(
-                                  'username', _username); // Armazena o username
+                                  'username',
+                                  snapshot.snapshot
+                                      .child('username')
+                                      .value
+                                      .toString());
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('User ' +
+                                      snapshot.snapshot
+                                          .child('username')
+                                          .value
+                                          .toString() +
+                                      ' logged in successfully!'),
+                                  backgroundColor: Colors.green,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
 
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => const HomePage()),
                               );
-                            } else {
-                              // Senha incorreta
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Invalid username or password'),
-                                  backgroundColor: Colors.red,
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
                             }
-                          } else {
-                            // Usuário não encontrado
+                          } catch (e) {
+                            // Trata erros de autenticação
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Invalid username or password'),
+                                content: Text('Invalid email or password'),
                                 backgroundColor: Colors.red,
                                 behavior: SnackBarBehavior.floating,
                               ),
@@ -184,12 +199,5 @@ class LoginPageState extends State<LoginPage> {
         ),
       ),
     );
-  }
-
-  String _encryptPassword(String password) {
-    final passwordEncoded = utf8.encode(password);
-    final passwordHash = sha256.convert(passwordEncoded).toString();
-
-    return passwordHash;
   }
 }
