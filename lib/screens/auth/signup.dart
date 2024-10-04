@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../home_page.dart';
-import '../../services/database_helper.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -14,6 +16,7 @@ class SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
   String _username = '';
   String _password = '';
+  // ignore: unused_field
   String _confirmPassword = '';
 
   @override
@@ -30,7 +33,7 @@ class SignUpPageState extends State<SignUpPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Image.asset(
-                    'assets/images/logo.png', // Certifica-te de que este caminho está correto
+                    'assets/images/logo.png',
                     height: 150,
                   ),
                   const SizedBox(height: 20),
@@ -87,7 +90,6 @@ class SignUpPageState extends State<SignUpPage> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
                       }
-                      // Verifica se a senha tem mais de 8 caracteres
                       if (value.length < 8) {
                         return 'Password must be at least 8 characters';
                       }
@@ -131,10 +133,12 @@ class SignUpPageState extends State<SignUpPage> {
                     child: ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
-                          bool usernameExists = await DatabaseHelper()
-                              .checkUsernameExists(_username);
+                          DatabaseReference ref =
+                              FirebaseDatabase.instance.ref('users/$_username');
 
-                          if (usernameExists) {
+                          // Verifica se o utilizador já existe
+                          final snapshot = await ref.once();
+                          if (snapshot.snapshot.value != null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Username already exists'),
@@ -145,23 +149,24 @@ class SignUpPageState extends State<SignUpPage> {
                             return;
                           }
 
-                          bool userCreatedsuccessfully = await DatabaseHelper()
-                              .addUser(_username, _password);
+                          // Cria o utilizador
+                          String encryptedPassword =
+                              _encryptPassword(_password);
 
-                          if (userCreatedsuccessfully) {
-                            SharedPreferences prefs =
-                                await SharedPreferences.getInstance();
-                            await prefs.setString(
-                                'username', _username); // Armazena o username
+                          // Adiciona o utilizador ao Firebase
+                          await ref.set({
+                            'username': _username,
+                            'password': encryptedPassword,
+                          }).then((_) {
+                            print('User added successfully');
+                          }).catchError((error) {
+                            print('Failed to add user: $error');
+                          });
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('User created successfully'),
-                                backgroundColor: Colors.green,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
+                          // Armazena o username no SharedPreferences
+                          SharedPreferences prefs =
+                              await SharedPreferences.getInstance();
+                          await prefs.setString('username', _username);
 
                           // Navega para a Home Page
                           Navigator.pushReplacement(
@@ -207,5 +212,13 @@ class SignUpPageState extends State<SignUpPage> {
         ),
       ),
     );
+  }
+
+  // Função para encriptar a senha
+  String _encryptPassword(String password) {
+    final passwordEncoded = utf8.encode(password);
+    final passwordHash = sha256.convert(passwordEncoded).toString();
+
+    return passwordHash;
   }
 }

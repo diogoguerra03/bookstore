@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'screens/auth/login.dart';
-import 'screens/home_page.dart'; // Certifique-se de importar a página inicial
+import 'screens/home_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding
       .ensureInitialized(); // Necessário para garantir que a inicialização do Flutter está concluída
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String? username =

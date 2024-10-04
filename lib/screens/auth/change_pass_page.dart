@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../services/database_helper.dart';
-import 'login.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -14,7 +15,14 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
   final _formKey = GlobalKey<FormState>();
   String _currentPassword = '';
   String _newPassword = '';
+  // ignore: unused_field
   String _confirmNewPassword = '';
+
+  String _encryptPassword(String password) {
+    final passwordEncoded = utf8.encode(password);
+    final passwordHash = sha256.convert(passwordEncoded).toString();
+    return passwordHash;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,22 +99,48 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
                           await SharedPreferences.getInstance();
                       String username = prefs.getString('username') ?? '';
 
-                      bool success = await DatabaseHelper().changePassword(
-                          username, _currentPassword, _newPassword);
+                      // Criptografa a senha atual
+                      String encryptedCurrentPassword =
+                          _encryptPassword(_currentPassword);
 
-                      if (success) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Password changed successfully'),
-                            backgroundColor: Colors.green,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                        Navigator.pop(context); // Volta para a página de perfil
+                      // Referência ao usuário no Firebase
+                      DatabaseReference ref =
+                          FirebaseDatabase.instance.ref('users/$username');
+
+                      // Obtém os dados do utilizador
+                      final snapshot = await ref.once();
+                      if (snapshot.snapshot.value != null) {
+                        final data =
+                            snapshot.snapshot.value as Map<dynamic, dynamic>;
+
+                        // Verifica a senha atual
+                        if (data['password'] == encryptedCurrentPassword) {
+                          // Atualiza a senha
+                          await ref.update(
+                              {'password': _encryptPassword(_newPassword)});
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Password changed successfully'),
+                              backgroundColor: Colors.green,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          Navigator.pop(
+                              context); // Volta para a página de perfil
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Current password is incorrect'),
+                              backgroundColor: Colors.red,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
                       } else {
+                        // ignore: use_build_context_synchronously
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Failed to change password'),
+                            content: Text('User not found'),
                             backgroundColor: Colors.red,
                             behavior: SnackBarBehavior.floating,
                           ),

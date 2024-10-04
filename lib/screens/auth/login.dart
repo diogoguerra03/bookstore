@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'signup.dart';
 import '../home_page.dart';
-import '../../services/database_helper.dart';
+import 'package:firebase_database/firebase_database.dart'; // Importação do Firebase Database
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -99,21 +101,40 @@ class LoginPageState extends State<LoginPage> {
                     child: ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
-                          bool authenticated = await DatabaseHelper()
-                              .authenticateUser(_username, _password);
+                          // Verifica se o utilizador existe e se a senha está correta
+                          DatabaseReference ref =
+                              FirebaseDatabase.instance.ref('users/$_username');
+                          final snapshot = await ref.once();
 
-                          if (authenticated) {
-                            SharedPreferences prefs =
-                                await SharedPreferences.getInstance();
-                            await prefs.setString(
-                                'username', _username); // Armazena o username
+                          if (snapshot.snapshot.value != null) {
+                            final data = snapshot.snapshot.value
+                                as Map<dynamic, dynamic>;
+                            String encryptedPassword =
+                                _encryptPassword(_password);
+                            if (data['password'] == encryptedPassword) {
+                              // Senha correta
+                              SharedPreferences prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.setString(
+                                  'username', _username); // Armazena o username
 
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const HomePage()),
-                            );
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const HomePage()),
+                              );
+                            } else {
+                              // Senha incorreta
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Invalid username or password'),
+                                  backgroundColor: Colors.red,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
                           } else {
+                            // Usuário não encontrado
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Invalid username or password'),
@@ -163,5 +184,12 @@ class LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  String _encryptPassword(String password) {
+    final passwordEncoded = utf8.encode(password);
+    final passwordHash = sha256.convert(passwordEncoded).toString();
+
+    return passwordHash;
   }
 }

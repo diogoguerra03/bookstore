@@ -5,8 +5,6 @@ import '../widgets/bottom_nav_bar.dart';
 import 'genre_page.dart';
 import 'detail_page.dart';
 import 'package:logger/logger.dart';
-import '../services/database_helper.dart';
-import '../models/user_model.dart';
 import 'auth/profile_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -31,8 +29,6 @@ class HomePageState extends State<HomePage> {
 
   final List<String> _searchOptions = ['title', 'author', 'subject'];
 
-  late Future<List<User>> _users;
-
   @override
   void initState() {
     super.initState();
@@ -41,16 +37,6 @@ class HomePageState extends State<HomePage> {
     horrorBooks = BookService().fetchBooks('subject=horror&limit=10', 1);
     mysteryBooks = BookService().fetchBooks('subject=mystery&limit=10', 1);
     searchResults = Future.value([]);
-
-    _users = DatabaseHelper().getAllUsers();
-
-    _users.then((userList) {
-      for (var user in userList) {
-        Logger().i('User: ${user.username}');
-      }
-    }).catchError((error) {
-      Logger().e('Error fetching users: $error');
-    });
   }
 
   void _searchBooks() {
