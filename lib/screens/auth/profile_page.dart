@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login.dart';
 import '../../widgets/bottom_nav_bar.dart';
-import 'change_pass_page.dart';
+import 'edit_profile_page.dart'; // A nova página para editar o perfil
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -14,19 +15,21 @@ class ProfilePage extends StatefulWidget {
 
 class ProfilePageState extends State<ProfilePage> {
   String username = '';
+  String email = 'user@example.com'; // Placeholder para o email
 
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    _loadUserData();
   }
 
   // Função para carregar o nome de utilizador
-  void _loadUserName() async {
+  void _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       username = prefs.getString('username') ??
           'Unknown User'; // Valor padrão se não existir
+      email = FirebaseAuth.instance.currentUser?.email ?? '';
     });
   }
 
@@ -46,68 +49,47 @@ class ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Profile'), automaticallyImplyLeading: false),
-      body: Center(
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const EditProfilePage()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const CircleAvatar(
-              radius: 40,
+              radius: 50,
               child: Icon(Icons.person, size: 50),
             ),
             const SizedBox(height: 20),
             Text(username,
-                style: const TextStyle(
-                    fontSize: 24)), // Exibe o nome de utilizador
-            const SizedBox(height: 10),
-            const Text('Playlists - 3'),
-            const Text('Saved books - 3'),
-            const SizedBox(height: 40),
-
-            SizedBox(
-              width: 200, // Defina o tamanho desejado
-              height: 40,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ChangePasswordPage(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  backgroundColor: Colors.blue,
-                ),
-                child: const Text(
-                  'Change password',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-              ),
+                style:
+                    const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(email,
+                style: const TextStyle(fontSize: 16, color: Colors.grey)),
+            const SizedBox(height: 20),
+            const Divider(
+              color: Colors.grey,
+              height: 2,
             ),
             const SizedBox(height: 20),
-
-            // Botão de Logout com tamanho reduzido
-            SizedBox(
-              width: 150, // Defina o tamanho desejado
-              height: 40,
-              child: ElevatedButton(
-                onPressed: _logout,
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  backgroundColor: Colors.red,
-                ),
-                child: const Text(
-                  'Logout',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-              ),
-            ),
+            _buildStatistics(),
           ],
         ),
       ),
@@ -126,6 +108,50 @@ class ProfilePageState extends State<ProfilePage> {
             // Navegação para a página Library
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildStatistics() {
+    return const Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: const [
+            Expanded(child: _StatisticCard(title: 'Playlists', count: '3')),
+            SizedBox(width: 16),
+            Expanded(child: _StatisticCard(title: 'Saved Books', count: '10')),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StatisticCard extends StatelessWidget {
+  final String title;
+  final String count;
+
+  const _StatisticCard({Key? key, required this.title, required this.count})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(title, style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 8),
+            Text(count,
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }

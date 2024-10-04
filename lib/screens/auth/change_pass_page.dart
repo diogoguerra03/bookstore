@@ -13,13 +13,14 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
   final _formKey = GlobalKey<FormState>();
   String _currentPassword = '';
   String _newPassword = '';
-  // ignore: unused_field
   String _confirmNewPassword = '';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Change Password')),
+      appBar: AppBar(
+        title: const Text('Change Password'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -28,9 +29,13 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextFormField(
-                decoration: const InputDecoration(
-                  hintText: 'Current Password',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'Current Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                 ),
                 obscureText: true,
                 onChanged: (value) {
@@ -45,9 +50,13 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
               ),
               const SizedBox(height: 16),
               TextFormField(
-                decoration: const InputDecoration(
-                  hintText: 'New Password',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'New Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                 ),
                 obscureText: true,
                 onChanged: (value) {
@@ -64,9 +73,13 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
               ),
               const SizedBox(height: 16),
               TextFormField(
-                decoration: const InputDecoration(
-                  hintText: 'Confirm New Password',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'Confirm New Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                 ),
                 obscureText: true,
                 onChanged: (value) {
@@ -137,7 +150,13 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
                       }
                     }
                   },
-                  child: const Text('Change Password'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    textStyle: const TextStyle(fontSize: 16),
+                  ),
+                  child: const Text('Change Password',
+                      style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
