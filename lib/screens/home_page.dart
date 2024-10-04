@@ -21,6 +21,7 @@ class HomePageState extends State<HomePage> {
   late Future<List<Book>> mysteryBooks;
   late Future<List<Book>> searchResults;
   bool isGenrePage = false; // Novo estado para controlar a navegação
+  bool isLoading = true; // Variável para controlar o loading
 
   final TextEditingController _searchController = TextEditingController();
   bool isSearching = false;
@@ -32,11 +33,33 @@ class HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    adventureBooks = BookService().fetchBooks('subject=adventure&limit=10', 1);
-    fantasyBooks = BookService().fetchBooks('subject=fantasy&limit=10', 1);
-    horrorBooks = BookService().fetchBooks('subject=horror&limit=10', 1);
-    mysteryBooks = BookService().fetchBooks('subject=mystery&limit=10', 1);
-    searchResults = Future.value([]);
+    _loadBooks();
+  }
+
+  Future<void> _loadBooks() async {
+    setState(() {
+      isLoading = true; // Inicia o estado de carregamento
+    });
+
+    try {
+      // Tente buscar os dados
+      adventureBooks =
+          BookService().fetchBooks('subject=adventure&limit=10', 1);
+      fantasyBooks = BookService().fetchBooks('subject=fantasy&limit=10', 1);
+      horrorBooks = BookService().fetchBooks('subject=horror&limit=10', 1);
+      mysteryBooks = BookService().fetchBooks('subject=mystery&limit=10', 1);
+
+      await Future.delayed(const Duration(seconds: 6)); // Simula um atraso
+    } catch (e) {
+      // Em caso de erro, você pode mostrar uma mensagem ou log
+      print('Error loading books: $e');
+      // Aqui, você pode definir um estado de erro se necessário
+    } finally {
+      // Garanta que o estado de carregamento é desativado
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   void _searchBooks() {
@@ -71,82 +94,86 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
           title: const Text('BookStore'), automaticallyImplyLeading: false),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Barra de pesquisa
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
+      body: isLoading
+          ? const Center(
+              child:
+                  CircularProgressIndicator()) // Mostra o loading enquanto carrega
+          : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
+                  // Barra de pesquisa
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search...',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 15,
+                                horizontal: 20,
+                              ),
+                            ),
+                            onChanged: (value) {
+                              if (value.isEmpty) {
+                                _clearSearch();
+                              }
+                            },
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 15,
-                          horizontal: 20,
+                        IconButton(
+                          icon: Icon(isSearching ? Icons.clear : Icons.search),
+                          onPressed: () {
+                            if (isSearching) {
+                              _clearSearch();
+                            } else {
+                              _searchBooks();
+                            }
+                          },
                         ),
-                      ),
-                      onChanged: (value) {
-                        if (value.isEmpty) {
-                          _clearSearch();
-                        }
+                      ],
+                    ),
+                  ),
+                  // Dropdown para selecionar tipo de pesquisa
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: DropdownButton<String>(
+                      value: _searchFilter,
+                      items: _searchOptions.map((String option) {
+                        return DropdownMenuItem<String>(
+                          value: option,
+                          child: Text('Search by $option'),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _searchFilter = newValue!;
+                        });
                       },
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(isSearching ? Icons.clear : Icons.search),
-                    onPressed: () {
-                      if (isSearching) {
-                        _clearSearch();
-                      } else {
-                        _searchBooks();
-                      }
-                    },
-                  ),
+                  const SizedBox(height: 10),
+                  if (isSearching)
+                    buildSearchResults(searchResults)
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildBookSection('Adventure', adventureBooks),
+                        buildBookSection('Fantasy', fantasyBooks),
+                        buildBookSection('Horror', horrorBooks),
+                        buildBookSection('Mystery', mysteryBooks),
+                      ],
+                    ),
                 ],
               ),
             ),
-            // Dropdown para selecionar tipo de pesquisa
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: DropdownButton<String>(
-                value: _searchFilter,
-                items: _searchOptions.map((String option) {
-                  return DropdownMenuItem<String>(
-                    value: option,
-                    child: Text('Search by $option'),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _searchFilter = newValue!;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (isSearching)
-              buildSearchResults(searchResults)
-            else
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildBookSection('Adventure', adventureBooks),
-                  buildBookSection('Fantasy', fantasyBooks),
-                  buildBookSection('Horror', horrorBooks),
-                  buildBookSection('Mystery', mysteryBooks),
-                ],
-              ),
-          ],
-        ),
-      ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: 0,
         onTap: (index) {

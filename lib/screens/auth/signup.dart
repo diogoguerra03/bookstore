@@ -3,8 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../home_page.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -18,6 +16,7 @@ class SignUpPageState extends State<SignUpPage> {
   String _username = '';
   String _email = '';
   String _password = '';
+  // ignore: unused_field
   String _confirmPassword = '';
 
   @override
