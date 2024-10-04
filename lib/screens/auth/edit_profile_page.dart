@@ -11,6 +11,7 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class EditProfilePageState extends State<EditProfilePage> {
+  // ignore: unused_field
   final _formKey = GlobalKey<FormState>();
   String _username = '';
   String _email = '';
@@ -60,10 +61,12 @@ class EditProfilePageState extends State<EditProfilePage> {
                   CircleAvatar(
                     radius: 60,
                     backgroundImage: _avatarUrl.isNotEmpty
-                        ? NetworkImage(_avatarUrl)
-                        : const AssetImage(
-                                'assets/images/avatar_placeholder.png')
-                            as ImageProvider<Object>,
+                        ? NetworkImage(_avatarUrl) // Exibe a imagem do avatar
+                        : null, // Se não houver URL, não defina uma imagem
+                    child: _avatarUrl.isEmpty
+                        ? const Icon(Icons.person,
+                            size: 60) // Exibe o ícone padrão
+                        : null, // Se houver URL, não exiba o ícone
                   ),
                   const SizedBox(height: 20),
                   TextFormField(

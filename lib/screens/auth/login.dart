@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'signup.dart';
 import '../home_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart'; // Importação do Firebase Database
+import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -16,6 +16,7 @@ class LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   String _email = '';
   String _password = '';
+  bool _obscurePassword = true; // Para ocultar/mostrar a senha
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +54,7 @@ class LoginPageState extends State<LoginPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 20),
+                      prefixIcon: const Icon(Icons.email), // Ícone de envelope
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -77,8 +79,21 @@ class LoginPageState extends State<LoginPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 20),
+                      prefixIcon: const Icon(Icons.lock), // Ícone de cadeado
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     onChanged: (value) {
                       setState(() {
                         _password = value;
@@ -131,12 +146,8 @@ class LoginPageState extends State<LoginPage> {
 
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('User ' +
-                                      snapshot.snapshot
-                                          .child('username')
-                                          .value
-                                          .toString() +
-                                      ' logged in successfully!'),
+                                  content: Text(
+                                      'User ${snapshot.snapshot.child('username').value} logged in successfully!'),
                                   backgroundColor: Colors.green,
                                   behavior: SnackBarBehavior.floating,
                                 ),

@@ -50,6 +50,7 @@ class ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -117,7 +118,7 @@ class ProfilePageState extends State<ProfilePage> {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          children: [
             Expanded(child: _StatisticCard(title: 'Playlists', count: '3')),
             SizedBox(width: 16),
             Expanded(child: _StatisticCard(title: 'Saved Books', count: '10')),
@@ -132,8 +133,7 @@ class _StatisticCard extends StatelessWidget {
   final String title;
   final String count;
 
-  const _StatisticCard({Key? key, required this.title, required this.count})
-      : super(key: key);
+  const _StatisticCard({required this.title, required this.count});
 
   @override
   Widget build(BuildContext context) {

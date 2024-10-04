@@ -13,6 +13,7 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
   final _formKey = GlobalKey<FormState>();
   String _currentPassword = '';
   String _newPassword = '';
+  // ignore: unused_field
   String _confirmNewPassword = '';
 
   @override

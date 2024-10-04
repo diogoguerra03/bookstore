@@ -52,7 +52,7 @@ class HomePageState extends State<HomePage> {
       await Future.delayed(const Duration(seconds: 6)); // Simula um atraso
     } catch (e) {
       // Em caso de erro, você pode mostrar uma mensagem ou log
-      print('Error loading books: $e');
+      Logger().e('Error loading books: $e');
       // Aqui, você pode definir um estado de erro se necessário
     } finally {
       // Garanta que o estado de carregamento é desativado

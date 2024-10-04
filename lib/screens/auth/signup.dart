@@ -16,8 +16,11 @@ class SignUpPageState extends State<SignUpPage> {
   String _username = '';
   String _email = '';
   String _password = '';
-  // ignore: unused_field
   String _confirmPassword = '';
+
+  bool _obscurePassword = true; // Para ocultar/mostrar a senha
+  bool _obscureConfirmPassword =
+      true; // Para ocultar/mostrar a confirmação da senha
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +58,7 @@ class SignUpPageState extends State<SignUpPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 20),
+                      prefixIcon: const Icon(Icons.email), // Ícone de envelope
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -79,6 +83,7 @@ class SignUpPageState extends State<SignUpPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 20),
+                      prefixIcon: const Icon(Icons.person), // Ícone de usuário
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -103,8 +108,21 @@ class SignUpPageState extends State<SignUpPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 20),
+                      prefixIcon: const Icon(Icons.lock), // Ícone de cadeado
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     onChanged: (value) {
                       setState(() {
                         _password = value;
@@ -131,8 +149,21 @@ class SignUpPageState extends State<SignUpPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 20),
+                      prefixIcon: const Icon(Icons.lock), // Ícone de cadeado
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: _obscureConfirmPassword,
                     onChanged: (value) {
                       setState(() {
                         _confirmPassword = value;
@@ -178,7 +209,7 @@ class SignUpPageState extends State<SignUpPage> {
                               'email': _email,
                             });
 
-                            // Armazena o username no SharedPreferences
+                            // Armazena o username e email no SharedPreferences
                             SharedPreferences prefs =
                                 await SharedPreferences.getInstance();
                             await prefs.setString('username', _username);
@@ -226,7 +257,7 @@ class SignUpPageState extends State<SignUpPage> {
 
                   const SizedBox(height: 20),
 
-                  // Link para Sign In
+                  // Link para se registar
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
