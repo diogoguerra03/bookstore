@@ -70,6 +70,7 @@ class EditProfilePageState extends State<EditProfilePage> {
           const SnackBar(
             content: Text('New password must be at least 8 characters'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         return;
@@ -79,6 +80,7 @@ class EditProfilePageState extends State<EditProfilePage> {
           const SnackBar(
             content: Text('Passwords do not match'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         return;
@@ -98,6 +100,7 @@ class EditProfilePageState extends State<EditProfilePage> {
           const SnackBar(
             content: Text('Password changed successfully'),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       } catch (e) {
@@ -105,6 +108,7 @@ class EditProfilePageState extends State<EditProfilePage> {
           SnackBar(
             content: Text('Failed to change password: $e'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -114,6 +118,7 @@ class EditProfilePageState extends State<EditProfilePage> {
       const SnackBar(
         content: Text('Profile updated successfully!'),
         backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
       ),
     );
 
