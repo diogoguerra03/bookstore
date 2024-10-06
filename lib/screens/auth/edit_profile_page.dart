@@ -69,7 +69,6 @@ class EditProfilePageState extends State<EditProfilePage> {
 
   // Função para atualizar os dados do usuário
   void _updateUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
     User? user = FirebaseAuth.instance.currentUser;
 
     // receber o username do snapshot
@@ -104,10 +103,12 @@ class EditProfilePageState extends State<EditProfilePage> {
       }
 
       try {
+        // buscar o email do usuário
+        String email = user.email!;
         // Reautentica o usuário com a senha atual
         UserCredential userCredential =
             await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: prefs.getString('email') ?? '',
+          email: email,
           password: _currentPassword,
         );
 
@@ -120,6 +121,7 @@ class EditProfilePageState extends State<EditProfilePage> {
           const SnackBar(
             content: Text('Failed to change password!'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         return; // Não prosseguir se a autenticação falhar
@@ -159,6 +161,7 @@ class EditProfilePageState extends State<EditProfilePage> {
       const SnackBar(
         content: Text('Profile updated successfully!'),
         backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
       ),
     );
 
