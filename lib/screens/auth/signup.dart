@@ -16,6 +16,7 @@ class SignUpPageState extends State<SignUpPage> {
   String _username = '';
   String _email = '';
   String _password = '';
+  // ignore: unused_field
   String _confirmPassword = '';
 
   bool _obscurePassword = true; // Para ocultar/mostrar a senha
@@ -212,8 +213,7 @@ class SignUpPageState extends State<SignUpPage> {
                             // Armazena o username e email no SharedPreferences
                             SharedPreferences prefs =
                                 await SharedPreferences.getInstance();
-                            await prefs.setString('username', _username);
-                            await prefs.setString('email', _email);
+                            await prefs.setString('uid', uid);
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(

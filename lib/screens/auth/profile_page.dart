@@ -5,6 +5,7 @@ import 'login.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import 'edit_profile_page.dart'; // A nova página para editar o perfil
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -16,6 +17,7 @@ class ProfilePage extends StatefulWidget {
 class ProfilePageState extends State<ProfilePage> {
   String username = '';
   String email = 'user@example.com'; // Placeholder para o email
+  String uid = '';
 
   @override
   void initState() {
@@ -23,20 +25,35 @@ class ProfilePageState extends State<ProfilePage> {
     _loadUserData();
   }
 
-  // Função para carregar o nome de utilizador
+  // Função para carregar o UID e os dados do usuário
   void _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      username = prefs.getString('username') ??
-          'Unknown User'; // Valor padrão se não existir
+      uid = prefs.getString('uid') ?? ''; // Carrega o UID do SharedPreferences
       email = FirebaseAuth.instance.currentUser?.email ?? '';
     });
+
+    // Adiciona um listener para atualizações em tempo real
+    if (uid.isNotEmpty) {
+      DatabaseReference ref = FirebaseDatabase.instance.ref('users/$uid');
+      ref.onValue.listen((event) {
+        final data = event.snapshot.value;
+        if (data != null) {
+          Map<String, dynamic> userData =
+              Map<String, dynamic>.from(data as Map<dynamic, dynamic>);
+          setState(() {
+            username =
+                userData['username'] ?? 'Unknown User'; // Atualiza o username
+          });
+        }
+      });
+    }
   }
 
   // Função para fazer logout
   void _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('username'); // Remove o username do SharedPreferences
+    await prefs.remove('uid'); // Remove o UID do SharedPreferences
 
     // Navega de volta para a página de login
     Navigator.pushReplacement(

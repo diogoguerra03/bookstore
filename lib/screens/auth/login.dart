@@ -133,16 +133,10 @@ class LoginPageState extends State<LoginPage> {
                             final snapshot = await ref.once();
 
                             if (snapshot.snapshot.value != null) {
-                              // Armazena o username nas Shared Preferences
+                              // Armazena o UID nas Shared Preferences
                               SharedPreferences prefs =
                                   await SharedPreferences.getInstance();
-                              await prefs.setString('email', _email);
-                              await prefs.setString(
-                                  'username',
-                                  snapshot.snapshot
-                                      .child('username')
-                                      .value
-                                      .toString());
+                              await prefs.setString('uid', uid);
 
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

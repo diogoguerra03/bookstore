@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Para autenticação
-import 'change_pass_page.dart'; // Importar a página de alteração de senha
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -14,8 +14,10 @@ class EditProfilePageState extends State<EditProfilePage> {
   // ignore: unused_field
   final _formKey = GlobalKey<FormState>();
   String _username = '';
-  String _email = '';
   String _avatarUrl = ''; // URL da imagem do avatar
+  String _currentPassword = '';
+  String _newPassword = '';
+  String _confirmNewPassword = '';
   bool _isLoading = true;
 
   @override
@@ -27,14 +29,95 @@ class EditProfilePageState extends State<EditProfilePage> {
   // Carregar dados do usuário
   void _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _username = prefs.getString('username') ?? 'Unknown User';
-      _email = FirebaseAuth.instance.currentUser?.email ??
-          ''; // Carrega o email do Firebase Auth
-      _avatarUrl =
-          ''; // Aqui você pode implementar a lógica para carregar a imagem do avatar
-      _isLoading = false;
-    });
+    String? uid =
+        prefs.getString('uid'); // Recupera o UID do Shared Preferences
+
+    if (uid != null) {
+      // Busca os dados do usuário na Realtime Database
+      DatabaseReference ref = FirebaseDatabase.instance.ref('users/$uid');
+      final snapshot = await ref.once();
+
+      if (snapshot.snapshot.value != null) {
+        setState(() {
+          _username = snapshot.snapshot.child('username').value.toString();
+          // _avatarUrl pode ser carregado aqui, se necessário
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Função para atualizar os dados do usuário
+  void _updateUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    User? user = FirebaseAuth.instance.currentUser;
+
+    // Atualiza o username se alterado
+    if (_username.length > 3 && _username != prefs.getString('username')) {
+      await FirebaseDatabase.instance.ref('users/${user!.uid}').update({
+        'username': _username,
+      });
+      await prefs.setString('username', _username);
+    }
+
+    // Verifica se o usuário quer alterar a senha
+    if (_currentPassword.isNotEmpty ||
+        _newPassword.isNotEmpty ||
+        _confirmNewPassword.isNotEmpty) {
+      // Validação para senhas
+      if (_newPassword.length < 8) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('New password must be at least 8 characters'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      if (_newPassword != _confirmNewPassword) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Passwords do not match'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      try {
+        // Reautentica o usuário com a senha atual
+        UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: prefs.getString('email') ?? '',
+          password: _currentPassword,
+        );
+
+        // Atualiza a senha no Firebase Auth
+        await userCredential.user!.updatePassword(_newPassword);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password changed successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to change password: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Profile updated successfully!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    Navigator.pop(context); // Volta para a página anterior
   }
 
   @override
@@ -45,9 +128,8 @@ class EditProfilePageState extends State<EditProfilePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.check),
-            onPressed: () {
-              // Aqui você pode implementar a lógica de salvar as alterações
-            },
+            onPressed:
+                _updateUserData, // Chama a função para atualizar os dados do usuário
           ),
         ],
       ),
@@ -62,7 +144,9 @@ class EditProfilePageState extends State<EditProfilePage> {
                     radius: 60,
                     backgroundImage: _avatarUrl.isNotEmpty
                         ? NetworkImage(_avatarUrl) // Exibe a imagem do avatar
-                        : null, // Se não houver URL, não defina uma imagem
+                        : const AssetImage(
+                                'assets/images/avatar_placeholder.png')
+                            as ImageProvider<Object>,
                     child: _avatarUrl.isEmpty
                         ? const Icon(Icons.person,
                             size: 60) // Exibe o ícone padrão
@@ -81,38 +165,44 @@ class EditProfilePageState extends State<EditProfilePage> {
                       _username = value;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   TextFormField(
-                    initialValue: _email,
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      labelText: 'Current Password',
                       border: OutlineInputBorder(),
                       contentPadding:
                           EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                     ),
+                    obscureText: true,
                     onChanged: (value) {
-                      _email = value;
+                      _currentPassword = value;
                     },
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity, // Define a largura do botão
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const ChangePasswordPage()),
-                        );
-                      }, // Defina a cor do texto aqui
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        textStyle: const TextStyle(fontSize: 16),
-                      ),
-                      child: const Text('Change Password',
-                          style: TextStyle(color: Colors.white)),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'New Password',
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                     ),
+                    obscureText: true,
+                    onChanged: (value) {
+                      _newPassword = value;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Confirm New Password',
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    ),
+                    obscureText: true,
+                    onChanged: (value) {
+                      _confirmNewPassword = value;
+                    },
                   ),
                 ],
               ),
