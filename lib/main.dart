@@ -14,11 +14,10 @@ void main() async {
   );
 
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  String? username =
-      prefs.getString('username'); // Verifica se o username está armazenado
+  String? uid = prefs.getString('uid'); // Verifica se o uid está armazenado
 
-  runApp(MyApp(
-      isLoggedIn: username != null)); // Passa o estado de login para o MyApp
+  runApp(
+      MyApp(isLoggedIn: uid != null)); // Passa o estado de login para o MyApp
 }
 
 class MyApp extends StatelessWidget {

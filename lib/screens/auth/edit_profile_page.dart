@@ -1,5 +1,6 @@
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -21,6 +22,17 @@ class EditProfilePageState extends State<EditProfilePage> {
   String _newPassword = '';
   String _confirmNewPassword = '';
   bool _isLoading = true;
+  bool _obscureCurrentPassword = true; // Para mostrar/ocultar a senha atual
+  bool _obscureNewPassword = true; // Para mostrar/ocultar a nova senha
+  bool _obscureConfirmPassword =
+      true; // Para mostrar/ocultar a confirmação da senha
+  File? _imageFile; // Armazenar o arquivo da imagem selecionada
+
+  String? _usernameErrors; // Mensagem de erro para o campo de username
+  String? _currentPasswordErrors; // Mensagem de erro para o campo de senha
+  String? _newPasswordErrors; // Mensagem de erro para o campo de nova senha
+  String?
+      _confirmNewPasswordErrors; // Mensagem de erro para o campo de confirmação da nova senha
 
   @override
   void initState() {
@@ -42,8 +54,12 @@ class EditProfilePageState extends State<EditProfilePage> {
       if (snapshot.snapshot.value != null) {
         setState(() {
           _username = snapshot.snapshot.child('username').value.toString();
-          _avatarUrl = snapshot.snapshot.child('avatarUrl').value.toString() ??
-              ''; // Carregar a URL do avatar se disponível
+
+          // Aqui você verifica se a URL do avatar existe
+          var avatarUrlValue = snapshot.snapshot.child('avatarUrl').value;
+          _avatarUrl = avatarUrlValue != null
+              ? avatarUrlValue.toString()
+              : ''; // Carregar a URL do avatar se disponível
           _isLoading = false;
         });
       }
@@ -55,12 +71,17 @@ class EditProfilePageState extends State<EditProfilePage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     User? user = FirebaseAuth.instance.currentUser;
 
-    // Atualiza o username se alterado
-    if (_username.length > 3 && _username != prefs.getString('username')) {
-      await FirebaseDatabase.instance.ref('users/${user!.uid}').update({
-        'username': _username,
+    // receber o username do snapshot
+    DatabaseReference ref = FirebaseDatabase.instance.ref('users/${user!.uid}');
+    final snapshot = await ref.once();
+    String username = snapshot.snapshot.child('username').value.toString();
+
+    // verifica se o username se foi alterado e se é válido (mínimo de 3 caracteres)
+    if (username != _username && _username.length < 3) {
+      setState(() {
+        _usernameErrors = 'Username must be at least 3 characters';
       });
-      await prefs.setString('username', _username);
+      return;
     }
 
     // Verifica se o usuário quer alterar a senha
@@ -69,21 +90,15 @@ class EditProfilePageState extends State<EditProfilePage> {
         _confirmNewPassword.isNotEmpty) {
       // Validação para senhas
       if (_newPassword.length < 8) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('New password must be at least 8 characters'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          _newPasswordErrors = 'New password must be at least 8 characters';
+        });
         return;
       }
       if (_newPassword != _confirmNewPassword) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Passwords do not match'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          _confirmNewPasswordErrors = 'Passwords do not match';
+        });
         return;
       }
 
@@ -95,21 +110,45 @@ class EditProfilePageState extends State<EditProfilePage> {
           password: _currentPassword,
         );
 
-        // Atualiza a senha no Firebase Auth
+        // Se a autenticação for bem-sucedida, atualiza a senha no Firebase Auth
         await userCredential.user!.updatePassword(_newPassword);
+      } catch (e) {
+        // Trata o erro de autenticação
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Password changed successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to change password: $e'),
+            content: Text('Failed to change password!'),
             backgroundColor: Colors.red,
           ),
         );
+        return; // Não prosseguir se a autenticação falhar
+      }
+    }
+
+    await FirebaseDatabase.instance.ref('users/${user.uid}').update({
+      'username': _username,
+    });
+
+    // Carrega a imagem para o Firebase Storage se uma imagem foi selecionada
+    if (_imageFile != null) {
+      String uid = user.uid;
+
+      // Carrega a imagem para o Firebase Storage
+      try {
+        await FirebaseStorage.instance
+            .ref('userProfilePictures/$uid')
+            .putFile(_imageFile!);
+
+        // Obtém a URL da imagem
+        String downloadUrl = await FirebaseStorage.instance
+            .ref('userProfilePictures/$uid')
+            .getDownloadURL();
+
+        // Atualiza a URL na Realtime Database
+        await FirebaseDatabase.instance.ref('users/$uid').update({
+          'avatarUrl': downloadUrl,
+        });
+      } catch (e) {
+        print('Error uploading image: $e');
       }
     }
 
@@ -129,32 +168,41 @@ class EditProfilePageState extends State<EditProfilePage> {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
-      File imageFile = File(pickedFile.path);
-      String uid = FirebaseAuth.instance.currentUser!.uid;
-
-      // Carrega a imagem para o Firebase Storage
-      try {
-        await FirebaseStorage.instance
-            .ref('userProfilePictures/$uid')
-            .putFile(imageFile);
-
-        // Obtém a URL da imagem
-        String downloadUrl = await FirebaseStorage.instance
-            .ref('userProfilePictures/$uid')
-            .getDownloadURL();
-
-        setState(() {
-          _avatarUrl = downloadUrl; // Atualiza a URL do avatar
-        });
-
-        // Opcionalmente, você pode armazenar a URL na Realtime Database
-        await FirebaseDatabase.instance.ref('users/$uid').update({
-          'avatarUrl': _avatarUrl,
-        });
-      } catch (e) {
-        print('Error uploading image: $e');
-      }
+      setState(() {
+        _imageFile =
+            File(pickedFile.path); // Armazena o arquivo da imagem selecionada
+        _avatarUrl = pickedFile
+            .path; // Atualiza a URL do avatar para a imagem escolhida (local)
+      });
     }
+  }
+
+  // Função para remover a imagem de perfil
+  Future<void> _removeProfileImage() async {
+    String uid = FirebaseAuth.instance.currentUser!.uid;
+
+    if (_avatarUrl.isNotEmpty) {
+      // Remove a imagem do Firebase Storage
+      await FirebaseStorage.instance.ref('userProfilePictures/$uid').delete();
+
+      // Remove a URL da imagem no Realtime Database
+      await FirebaseDatabase.instance.ref('users/$uid').update({
+        'avatarUrl': null,
+      });
+    }
+
+    setState(() {
+      _avatarUrl = ''; // Limpa a URL do avatar
+      _imageFile = null; // Limpa o arquivo da imagem
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Profile image removed successfully!'),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -172,79 +220,151 @@ class EditProfilePageState extends State<EditProfilePage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // Exibe a imagem do usuário ou um avatar padrão
-                  GestureDetector(
-                    onTap: _pickImage, // Torna o CircleAvatar clicável
-                    child: CircleAvatar(
-                      radius: 60,
-                      backgroundImage: _avatarUrl.isNotEmpty
-                          ? NetworkImage(_avatarUrl) // Exibe a imagem do avatar
-                          : const AssetImage(
-                                  'assets/images/avatar_placeholder.png')
-                              as ImageProvider<Object>,
-                      child: _avatarUrl.isEmpty
-                          ? const Icon(Icons.person,
-                              size: 60) // Exibe o ícone padrão
-                          : null,
+          : SingleChildScrollView(
+              // Adiciona SingleChildScrollView
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    // Exibe a imagem do usuário ou um avatar padrão
+                    GestureDetector(
+                      onTap: _pickImage, // Torna o CircleAvatar clicável
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundImage: _imageFile != null
+                            ? FileImage(_imageFile!) // Exibe a imagem local
+                            : _avatarUrl.isNotEmpty
+                                ? NetworkImage(
+                                    _avatarUrl) // Exibe a imagem do avatar
+                                : null,
+                        child: _avatarUrl.isEmpty && _imageFile == null
+                            ? const Icon(Icons.person,
+                                size: 60) // Exibe o ícone padrão
+                            : null,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    initialValue: _username,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    const SizedBox(height: 20),
+                    // Botão para remover a imagem de perfil
+                    if (_avatarUrl.isNotEmpty ||
+                        _imageFile !=
+                            null) // Exibe o botão somente se houver uma imagem
+                      SizedBox(
+                        width: 150, // Largura do botão
+                        child: ElevatedButton(
+                          onPressed: _removeProfileImage,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red, // Botão vermelho
+                          ),
+                          child: const Text('Remove Image',
+                              style: TextStyle(color: Colors.white)),
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      initialValue: _username,
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        border: const OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 15, horizontal: 20),
+                        prefixIcon:
+                            const Icon(Icons.person), // Ícone de usuário
+                        errorText: _usernameErrors,
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _username = value;
+                        });
+                      },
                     ),
-                    onChanged: (value) {
-                      _username = value;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Current Password',
-                      border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    const SizedBox(height: 20),
+                    // Campo para a senha atual
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'Current Password',
+                        border: const OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 15, horizontal: 20),
+                        prefixIcon: const Icon(Icons.lock), // Ícone de cadeado
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureCurrentPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureCurrentPassword =
+                                  !_obscureCurrentPassword;
+                            });
+                          },
+                        ),
+                        errorText: _currentPasswordErrors,
+                      ),
+                      obscureText: _obscureCurrentPassword,
+                      onChanged: (value) {
+                        _currentPassword = value;
+                      },
                     ),
-                    obscureText: true,
-                    onChanged: (value) {
-                      _currentPassword = value;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'New Password',
-                      border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    const SizedBox(height: 20),
+                    // Campo para a nova senha
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'New Password',
+                        border: const OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 15, horizontal: 20),
+                        prefixIcon: const Icon(Icons.lock), // Ícone de cadeado
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureNewPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureNewPassword = !_obscureNewPassword;
+                            });
+                          },
+                        ),
+                        errorText: _newPasswordErrors,
+                      ),
+                      obscureText: _obscureNewPassword,
+                      onChanged: (value) {
+                        _newPassword = value;
+                      },
                     ),
-                    obscureText: true,
-                    onChanged: (value) {
-                      _newPassword = value;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm New Password',
-                      border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    const SizedBox(height: 20),
+                    // Campo para confirmar a nova senha
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'Confirm New Password',
+                        border: const OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 15, horizontal: 20),
+                        prefixIcon: const Icon(Icons.lock), // Ícone de cadeado
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                        errorText: _confirmNewPasswordErrors,
+                      ),
+                      obscureText: _obscureConfirmPassword,
+                      onChanged: (value) {
+                        _confirmNewPassword = value;
+                      },
                     ),
-                    obscureText: true,
-                    onChanged: (value) {
-                      _confirmNewPassword = value;
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
     );

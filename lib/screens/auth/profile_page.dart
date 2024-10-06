@@ -94,11 +94,10 @@ class ProfilePageState extends State<ProfilePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             CircleAvatar(
-              radius: 50,
+              radius: 75,
               backgroundImage: avatarUrl.isNotEmpty
                   ? NetworkImage(avatarUrl) // Exibe a imagem do avatar
-                  : const AssetImage('assets/images/avatar_placeholder.png')
-                      as ImageProvider<Object>, // Avatar padrão
+                  : null, // Avatar padrão
               child: avatarUrl.isEmpty
                   ? const Icon(Icons.person, size: 50) // Ícone padrão
                   : null,
