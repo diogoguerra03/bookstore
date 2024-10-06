@@ -138,30 +138,34 @@ class LoginPageState extends State<LoginPage> {
                                   await SharedPreferences.getInstance();
                               await prefs.setString('uid', uid);
 
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        'User ${snapshot.snapshot.child('username').value} logged in successfully!'),
+                                    backgroundColor: Colors.green,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const HomePage()),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              // Trata erros de autenticação
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      'User ${snapshot.snapshot.child('username').value} logged in successfully!'),
-                                  backgroundColor: Colors.green,
+                                const SnackBar(
+                                  content: Text('Invalid email or password'),
+                                  backgroundColor: Colors.red,
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
-
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const HomePage()),
-                              );
                             }
-                          } catch (e) {
-                            // Trata erros de autenticação
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Invalid email or password'),
-                                backgroundColor: Colors.red,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
                           }
                         }
                       },

@@ -6,7 +6,6 @@ import '../../widgets/bottom_nav_bar.dart';
 import 'edit_profile_page.dart'; // A nova página para editar o perfil
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -58,6 +57,7 @@ class ProfilePageState extends State<ProfilePage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('uid'); // Remove o UID do SharedPreferences
 
+    if (!mounted) return;
     // Navega de volta para a página de login
     Navigator.pushReplacement(
       context,

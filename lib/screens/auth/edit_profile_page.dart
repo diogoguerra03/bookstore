@@ -1,11 +1,11 @@
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io'; // Para manipulação de arquivos
+import 'package:logger/logger.dart'; // Para logs
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -15,6 +15,7 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class EditProfilePageState extends State<EditProfilePage> {
+  // ignore: unused_field
   final _formKey = GlobalKey<FormState>();
   String _username = '';
   String _avatarUrl = ''; // URL da imagem do avatar
@@ -114,6 +115,7 @@ class EditProfilePageState extends State<EditProfilePage> {
         await userCredential.user!.updatePassword(_newPassword);
       } catch (e) {
         // Trata o erro de autenticação
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to change password!'),
@@ -148,10 +150,11 @@ class EditProfilePageState extends State<EditProfilePage> {
           'avatarUrl': downloadUrl,
         });
       } catch (e) {
-        print('Error uploading image: $e');
+        Logger().e('Error uploading image: $e');
       }
     }
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Profile updated successfully!'),
@@ -196,6 +199,7 @@ class EditProfilePageState extends State<EditProfilePage> {
       _imageFile = null; // Limpa o arquivo da imagem
     });
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Profile image removed successfully!'),
