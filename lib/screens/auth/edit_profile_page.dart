@@ -1,7 +1,10 @@
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io'; // Para manipulação de arquivos
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -11,7 +14,6 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class EditProfilePageState extends State<EditProfilePage> {
-  // ignore: unused_field
   final _formKey = GlobalKey<FormState>();
   String _username = '';
   String _avatarUrl = ''; // URL da imagem do avatar
@@ -40,7 +42,8 @@ class EditProfilePageState extends State<EditProfilePage> {
       if (snapshot.snapshot.value != null) {
         setState(() {
           _username = snapshot.snapshot.child('username').value.toString();
-          // _avatarUrl pode ser carregado aqui, se necessário
+          _avatarUrl = snapshot.snapshot.child('avatarUrl').value.toString() ??
+              ''; // Carregar a URL do avatar se disponível
           _isLoading = false;
         });
       }
@@ -70,7 +73,6 @@ class EditProfilePageState extends State<EditProfilePage> {
           const SnackBar(
             content: Text('New password must be at least 8 characters'),
             backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
           ),
         );
         return;
@@ -80,7 +82,6 @@ class EditProfilePageState extends State<EditProfilePage> {
           const SnackBar(
             content: Text('Passwords do not match'),
             backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
           ),
         );
         return;
@@ -100,7 +101,6 @@ class EditProfilePageState extends State<EditProfilePage> {
           const SnackBar(
             content: Text('Password changed successfully'),
             backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
           ),
         );
       } catch (e) {
@@ -108,7 +108,6 @@ class EditProfilePageState extends State<EditProfilePage> {
           SnackBar(
             content: Text('Failed to change password: $e'),
             backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -118,11 +117,44 @@ class EditProfilePageState extends State<EditProfilePage> {
       const SnackBar(
         content: Text('Profile updated successfully!'),
         backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
       ),
     );
 
     Navigator.pop(context); // Volta para a página anterior
+  }
+
+  // Função para selecionar a imagem do perfil
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      File imageFile = File(pickedFile.path);
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+
+      // Carrega a imagem para o Firebase Storage
+      try {
+        await FirebaseStorage.instance
+            .ref('userProfilePictures/$uid')
+            .putFile(imageFile);
+
+        // Obtém a URL da imagem
+        String downloadUrl = await FirebaseStorage.instance
+            .ref('userProfilePictures/$uid')
+            .getDownloadURL();
+
+        setState(() {
+          _avatarUrl = downloadUrl; // Atualiza a URL do avatar
+        });
+
+        // Opcionalmente, você pode armazenar a URL na Realtime Database
+        await FirebaseDatabase.instance.ref('users/$uid').update({
+          'avatarUrl': _avatarUrl,
+        });
+      } catch (e) {
+        print('Error uploading image: $e');
+      }
+    }
   }
 
   @override
@@ -145,17 +177,20 @@ class EditProfilePageState extends State<EditProfilePage> {
               child: Column(
                 children: [
                   // Exibe a imagem do usuário ou um avatar padrão
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundImage: _avatarUrl.isNotEmpty
-                        ? NetworkImage(_avatarUrl) // Exibe a imagem do avatar
-                        : const AssetImage(
-                                'assets/images/avatar_placeholder.png')
-                            as ImageProvider<Object>,
-                    child: _avatarUrl.isEmpty
-                        ? const Icon(Icons.person,
-                            size: 60) // Exibe o ícone padrão
-                        : null, // Se houver URL, não exiba o ícone
+                  GestureDetector(
+                    onTap: _pickImage, // Torna o CircleAvatar clicável
+                    child: CircleAvatar(
+                      radius: 60,
+                      backgroundImage: _avatarUrl.isNotEmpty
+                          ? NetworkImage(_avatarUrl) // Exibe a imagem do avatar
+                          : const AssetImage(
+                                  'assets/images/avatar_placeholder.png')
+                              as ImageProvider<Object>,
+                      child: _avatarUrl.isEmpty
+                          ? const Icon(Icons.person,
+                              size: 60) // Exibe o ícone padrão
+                          : null,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   TextFormField(

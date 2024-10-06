@@ -6,6 +6,7 @@ import '../../widgets/bottom_nav_bar.dart';
 import 'edit_profile_page.dart'; // A nova página para editar o perfil
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -18,6 +19,7 @@ class ProfilePageState extends State<ProfilePage> {
   String username = '';
   String email = 'user@example.com'; // Placeholder para o email
   String uid = '';
+  String avatarUrl = ''; // URL da imagem do avatar
 
   @override
   void initState() {
@@ -44,6 +46,7 @@ class ProfilePageState extends State<ProfilePage> {
           setState(() {
             username =
                 userData['username'] ?? 'Unknown User'; // Atualiza o username
+            avatarUrl = userData['avatarUrl'] ?? ''; // Atualiza a URL do avatar
           });
         }
       });
@@ -90,9 +93,15 @@ class ProfilePageState extends State<ProfilePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const CircleAvatar(
+            CircleAvatar(
               radius: 50,
-              child: Icon(Icons.person, size: 50),
+              backgroundImage: avatarUrl.isNotEmpty
+                  ? NetworkImage(avatarUrl) // Exibe a imagem do avatar
+                  : const AssetImage('assets/images/avatar_placeholder.png')
+                      as ImageProvider<Object>, // Avatar padrão
+              child: avatarUrl.isEmpty
+                  ? const Icon(Icons.person, size: 50) // Ícone padrão
+                  : null,
             ),
             const SizedBox(height: 20),
             Text(username,
