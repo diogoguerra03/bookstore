@@ -237,7 +237,7 @@ class EditProfilePageState extends State<EditProfilePage> {
                     GestureDetector(
                       onTap: _pickImage, // Torna o CircleAvatar clicável
                       child: CircleAvatar(
-                        radius: 60,
+                        radius: 75,
                         backgroundImage: _imageFile != null
                             ? FileImage(_imageFile!) // Exibe a imagem local
                             : _avatarUrl.isNotEmpty
