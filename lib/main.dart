@@ -4,6 +4,8 @@ import 'screens/home_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'screens/connection_page.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding
@@ -16,16 +18,29 @@ void main() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String? uid = prefs.getString('uid'); // Verifica se o uid está armazenado
 
-  runApp(
-      MyApp(isLoggedIn: uid != null)); // Passa o estado de login para o MyApp
+  final List<ConnectivityResult> connectivityResult =
+      await (Connectivity().checkConnectivity());
+
+  // Verifica se o utilizador está online, se não, mete o estado de online a falso
+  bool isOnline = connectivityResult.contains(ConnectivityResult.mobile) ||
+      connectivityResult.contains(ConnectivityResult.wifi);
+
+  runApp(MyApp(
+    isLoggedIn: uid != null, // Verifica se o utilizador está logado
+    isOnline: isOnline, // Verifica se o utilizador está online
+  ));
 }
 
 class MyApp extends StatelessWidget {
   final bool
       isLoggedIn; // Adiciona uma propriedade para verificar se o utilizador está logado
+  final bool
+      isOnline; // Adiciona uma propriedade para verificar se o utilizador está online
 
   const MyApp(
-      {super.key, required this.isLoggedIn}); // Uso de super parâmetros e const
+      {super.key,
+      required this.isLoggedIn,
+      required this.isOnline}); // Uso de super parâmetros e const
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +50,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: isLoggedIn
-          ? const HomePage()
-          : const LoginPage(), // Redireciona conforme o estado de login
+      home: isOnline
+          ? isLoggedIn
+              ? const HomePage()
+              : const LoginPage()
+          : const NoConnectionPage(), // Adiciona uma condição para verificar se o utilizador está online
     );
   }
 }
