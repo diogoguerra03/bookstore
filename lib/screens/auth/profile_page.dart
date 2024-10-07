@@ -66,6 +66,34 @@ class ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // Função para exibir o pop-up de confirmação de logout
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Logout'),
+          content: const Text('Are you sure you want to log out?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+            ),
+            TextButton(
+              child: const Text('Logout'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Fecha o diálogo
+                _logout(); // Chama a função de logout
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,7 +113,8 @@ class ProfilePageState extends State<ProfilePage> {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: _logout,
+            onPressed:
+                _showLogoutConfirmationDialog, // Muda para o pop-up de confirmação
           ),
         ],
       ),
