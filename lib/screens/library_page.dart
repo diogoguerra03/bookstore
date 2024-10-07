@@ -45,6 +45,45 @@ class LibraryPageState extends State<LibraryPage> {
     }
   }
 
+  // Mostra o diálogo de confirmação de exclusão se não for a playlist "Favorites"
+  void _showDeleteDialog(String playlistName) {
+    if (playlistName != "Favorites") {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Delete Playlist'),
+            content: Text('Are you sure you want to delete $playlistName?'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Fecha o diálogo
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Fecha o diálogo
+                  _deletePlaylist(playlistName); // Chama função de deletar
+                },
+                child: const Text('Yes'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Favorites playlist cannot be deleted."),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   // Função para excluir uma playlist
   Future<void> _deletePlaylist(String playlistName) async {
     User? user = _auth.currentUser;
@@ -52,34 +91,6 @@ class LibraryPageState extends State<LibraryPage> {
       await _database.ref('bookshelf/${user.uid}/$playlistName').remove();
       _loadPlaylists(); // Recarrega as playlists após a exclusão
     }
-  }
-
-  // Mostra o diálogo de confirmação de exclusão
-  void _showDeleteDialog(String playlistName) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Delete Playlist'),
-          content: Text('Are you sure you want to delete $playlistName?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Fecha o diálogo
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Fecha o diálogo
-                _deletePlaylist(playlistName); // Chama função de deletar
-              },
-              child: const Text('Yes'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override

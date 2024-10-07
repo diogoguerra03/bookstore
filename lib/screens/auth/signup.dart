@@ -16,6 +16,7 @@ class SignUpPageState extends State<SignUpPage> {
   String _username = '';
   String _email = '';
   String _password = '';
+  // ignore: unused_field
   String _confirmPassword = '';
 
   bool _obscurePassword = true;
@@ -211,7 +212,7 @@ class SignUpPageState extends State<SignUpPage> {
                             await FirebaseDatabase.instance
                                 .ref('bookshelf/$uid')
                                 .set({
-                              'favorites':
+                              'Favorites':
                                   // Cria um nó vazio para a prateleira 'favorites'
                                   {'empty': true}
                             });
