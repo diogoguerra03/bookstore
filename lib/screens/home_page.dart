@@ -6,6 +6,7 @@ import 'genre_page.dart';
 import 'detail_page.dart';
 import 'package:logger/logger.dart';
 import 'auth/profile_page.dart';
+import 'library_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -179,6 +180,12 @@ class HomePageState extends State<HomePage> {
         onTap: (index) {
           if (index == 1) {
             // Navegação para a página Library
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LibraryPage(),
+              ),
+            );
           } else if (index == 2) {
             // Navegação para a página Profile
             Navigator.push(

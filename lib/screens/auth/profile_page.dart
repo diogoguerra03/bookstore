@@ -6,6 +6,7 @@ import '../../widgets/bottom_nav_bar.dart';
 import 'edit_profile_page.dart'; // A nova página para editar o perfil
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../library_page.dart'; // A página Library
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -132,6 +133,12 @@ class ProfilePageState extends State<ProfilePage> {
             );
           } else if (index == 1) {
             // Navegação para a página Library
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LibraryPage(),
+              ),
+            );
           }
         },
       ),

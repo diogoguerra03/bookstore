@@ -16,12 +16,10 @@ class SignUpPageState extends State<SignUpPage> {
   String _username = '';
   String _email = '';
   String _password = '';
-  // ignore: unused_field
   String _confirmPassword = '';
 
-  bool _obscurePassword = true; // Para ocultar/mostrar a senha
-  bool _obscureConfirmPassword =
-      true; // Para ocultar/mostrar a confirmação da senha
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +57,7 @@ class SignUpPageState extends State<SignUpPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 20),
-                      prefixIcon: const Icon(Icons.email), // Ícone de envelope
+                      prefixIcon: const Icon(Icons.email),
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -84,7 +82,7 @@ class SignUpPageState extends State<SignUpPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 20),
-                      prefixIcon: const Icon(Icons.person), // Ícone de usuário
+                      prefixIcon: const Icon(Icons.person),
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -109,7 +107,7 @@ class SignUpPageState extends State<SignUpPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 20),
-                      prefixIcon: const Icon(Icons.lock), // Ícone de cadeado
+                      prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
@@ -150,7 +148,7 @@ class SignUpPageState extends State<SignUpPage> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 20),
-                      prefixIcon: const Icon(Icons.lock), // Ícone de cadeado
+                      prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureConfirmPassword
@@ -189,7 +187,6 @@ class SignUpPageState extends State<SignUpPage> {
                     child: ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
-                          // Verifica se o utilizador já existe
                           try {
                             // Tenta criar o utilizador no Firebase Auth
                             UserCredential userCredential = await FirebaseAuth
@@ -208,6 +205,15 @@ class SignUpPageState extends State<SignUpPage> {
                                 .set({
                               'username': _username,
                               'email': _email,
+                            });
+
+                            // Cria a prateleira padrão 'favorites'
+                            await FirebaseDatabase.instance
+                                .ref('bookshelf/$uid')
+                                .set({
+                              'favorites':
+                                  // Cria um nó vazio para a prateleira 'favorites'
+                                  {'empty': true}
                             });
 
                             // Armazena o username e email no SharedPreferences
