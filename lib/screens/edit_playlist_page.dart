@@ -7,11 +7,16 @@ import 'dart:io';
 import 'package:logger/logger.dart'; // Para logs
 
 class EditPlaylistPage extends StatefulWidget {
+  final String playlistId; // Agora recebe o ID da playlist
   final String playlistName;
   final String? imageUrl;
 
-  const EditPlaylistPage(
-      {super.key, required this.playlistName, this.imageUrl});
+  const EditPlaylistPage({
+    super.key,
+    required this.playlistId,
+    required this.playlistName,
+    this.imageUrl,
+  });
 
   @override
   EditPlaylistPageState createState() => EditPlaylistPageState();
@@ -46,36 +51,17 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
     }
 
     if (user != null) {
+      // ignore: unused_local_variable
       DatabaseReference userPlaylistsRef =
           _database.ref('bookshelf/${user.uid}');
 
-      // Validação: Verifica se já existe uma playlist com o novo nome
-      DataSnapshot existingPlaylists = await userPlaylistsRef.get();
-      if (existingPlaylists.exists) {
-        Map<dynamic, dynamic> playlists =
-            existingPlaylists.value as Map<dynamic, dynamic>;
-        if (playlists.containsKey(_nameController.text.trim()) &&
-            _nameController.text.trim() != widget.playlistName) {
-          setState(() {
-            _errorText = 'A playlist with this name already exists.';
-          });
-          return;
-        }
-      }
-
       // Atualização do nome da playlist (se for diferente)
       DatabaseReference currentRef =
-          _database.ref('bookshelf/${user.uid}/${widget.playlistName}');
+          _database.ref('bookshelf/${user.uid}/${widget.playlistId}');
       if (widget.playlistName != _nameController.text.trim()) {
-        DatabaseReference newRef = _database
-            .ref('bookshelf/${user.uid}/${_nameController.text.trim()}');
-        DataSnapshot snapshot = await currentRef.get();
-
-        if (snapshot.exists) {
-          await newRef.set(
-              snapshot.value); // Copia os dados da playlist antiga para a nova
-          await currentRef.remove(); // Remove o nome antigo da playlist
-        }
+        await currentRef.update({
+          'name': _nameController.text.trim(),
+        });
       }
 
       // Upload da nova imagem, se houver
@@ -84,17 +70,17 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
         try {
           // Faz upload da nova imagem
           await FirebaseStorage.instance
-              .ref('bookshelf/$userId/${_nameController.text.trim()}')
+              .ref('bookshelf/$userId/${widget.playlistId}')
               .putFile(_imageFile!);
 
           // Obtém a URL da nova imagem
           String downloadUrl = await FirebaseStorage.instance
-              .ref('bookshelf/$userId/${_nameController.text.trim()}')
+              .ref('bookshelf/$userId/${widget.playlistId}')
               .getDownloadURL();
 
           // Atualiza a URL da imagem na Realtime Database
           await _database
-              .ref('bookshelf/${user.uid}/${_nameController.text.trim()}')
+              .ref('bookshelf/${user.uid}/${widget.playlistId}')
               .update({
             'image': downloadUrl,
           });
@@ -118,7 +104,7 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
       );
 
       // Volta para a página anterior
-      Navigator.pop(context, _nameController.text.trim());
+      Navigator.pop(context, true);
     }
   }
 
@@ -135,19 +121,19 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
   }
 
   // Função para remover a imagem da playlist
-  Future<void> _removeProfileImage() async {
+  Future<void> _removePlaylistImage() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
 
     if (_playlistImageUrl != null && _playlistImageUrl!.isNotEmpty) {
       try {
         // Remove a imagem do Firebase Storage
         await FirebaseStorage.instance
-            .ref('bookshelf/$uid/${widget.playlistName}')
+            .ref('bookshelf/$uid/${widget.playlistId}')
             .delete();
 
         // Remove a URL da imagem no Realtime Database
         await _database
-            .ref('bookshelf/$uid/${widget.playlistName}')
+            .ref('bookshelf/$uid/${widget.playlistId}')
             .update({'image': ''});
 
         setState(() {
@@ -209,13 +195,13 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
             const Text('Tap to change image',
                 style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 8),
-            if (_playlistImageUrl != null && _playlistImageUrl!.isNotEmpty ||
-                _imageFile !=
-                    null) // Exibe o botão somente se houver uma imagem
+            if (_playlistImageUrl != null &&
+                _playlistImageUrl!
+                    .isNotEmpty) // Exibe o botão somente se houver uma imagem
               SizedBox(
                 width: 150, // Largura do botão
                 child: ElevatedButton(
-                  onPressed: _removeProfileImage,
+                  onPressed: _removePlaylistImage,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red, // Botão vermelho
                   ),

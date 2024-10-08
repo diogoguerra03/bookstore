@@ -4,11 +4,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'edit_playlist_page.dart';
 
 class PlaylistDetailPage extends StatefulWidget {
+  final String playlistId; // Agora recebemos o ID da playlist
   final String playlistName;
   final String? imageUrl;
 
-  const PlaylistDetailPage(
-      {required this.playlistName, this.imageUrl, super.key});
+  const PlaylistDetailPage({
+    required this.playlistId,
+    required this.playlistName,
+    this.imageUrl,
+    super.key,
+  });
 
   @override
   PlaylistDetailPageState createState() => PlaylistDetailPageState();
@@ -30,7 +35,7 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
     User? user = _auth.currentUser;
     if (user != null) {
       DatabaseReference ref =
-          _database.ref('bookshelf/${user.uid}/${widget.playlistName}/books');
+          _database.ref('bookshelf/${user.uid}/${widget.playlistId}/books');
       DataSnapshot snapshot = await ref.get();
 
       if (snapshot.exists) {
@@ -61,6 +66,7 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => EditPlaylistPage(
+                    playlistId: widget.playlistId, // Agora passamos o ID
                     playlistName: widget.playlistName,
                     imageUrl: widget.imageUrl,
                   ),

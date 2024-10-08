@@ -227,13 +227,18 @@ class SignUpPageState extends State<SignUpPage> {
                               'email': _email,
                             });
 
-                            // Cria a prateleira padrão 'Favorites'
-                            await FirebaseDatabase.instance
+                            // Gera um ID único para a playlist
+                            DatabaseReference playlistRef = FirebaseDatabase
+                                .instance
                                 .ref('bookshelf/$uid')
-                                .set({
-                              'Favorites':
-                                  // Cria um nó vazio para a prateleira 'Favorites'
-                                  {'empty': true}
+                                .push(); // Gera o ID único
+
+                            String playlistId =
+                                playlistRef.key!; // Obtém o ID gerado
+
+                            // Cria a playlist "Favorites" com o ID gerado
+                            await playlistRef.set({
+                              'name': 'Favorites',
                             });
 
                             // Faz o upload da imagem da prateleira 'favorites' para o Firebase Storage
@@ -243,20 +248,21 @@ class SignUpPageState extends State<SignUpPage> {
                                   'assets/images/favorites.png');
 
                               // Faz o upload do arquivo para o Firebase Storage
+                              // Faz o upload da imagem da playlist "Favorites" para o Firebase Storage
                               await FirebaseStorage.instance
-                                  .ref('bookshelf/$uid/Favorites')
+                                  .ref(
+                                      'bookshelf/$uid/$playlistId') // Usando o ID da playlist
                                   .putFile(file);
 
-                              // Obtém a URL da imagem
+// Obtém a URL da imagem
                               String downloadUrl = await FirebaseStorage
                                   .instance
-                                  .ref('bookshelf/$uid/Favorites')
+                                  .ref(
+                                      'bookshelf/$uid/$playlistId') // Usando o ID da playlist
                                   .getDownloadURL();
 
-                              // Atualiza a URL na Realtime Database
-                              await FirebaseDatabase.instance
-                                  .ref('bookshelf/$uid/Favorites')
-                                  .update({
+// Atualiza a URL da imagem na Realtime Database
+                              await playlistRef.update({
                                 'image': downloadUrl,
                               });
                             } catch (e) {

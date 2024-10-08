@@ -17,7 +17,8 @@ class LibraryPage extends StatefulWidget {
 class LibraryPageState extends State<LibraryPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseDatabase _database = FirebaseDatabase.instance;
-  List<String> playlists = []; // Lista para armazenar os nomes das prateleiras
+  List<Map<String, dynamic>> playlists =
+      []; // Lista para armazenar as playlists (com ID e nome)
   Map<String, String?> playlistImages =
       {}; // Mapa para armazenar URLs das imagens das playlists
   Map<String, int> bookCounts =
@@ -38,41 +39,40 @@ class LibraryPageState extends State<LibraryPage> {
 
       if (snapshot.exists) {
         Map<dynamic, dynamic> values = snapshot.value as Map<dynamic, dynamic>;
-        List<String> loadedPlaylists = values.keys.cast<String>().toList();
-
-        // Garante que 'Favorites' esteja sempre em primeiro lugar
-        if (loadedPlaylists.contains('Favorites')) {
-          loadedPlaylists.remove('Favorites');
-          loadedPlaylists.insert(0, 'Favorites');
-        }
+        List<Map<String, dynamic>> loadedPlaylists = [];
 
         setState(() {
-          playlists = loadedPlaylists;
+          playlistImages.clear(); // Limpa as imagens antigas
+          bookCounts.clear(); // Limpa as contagens antigas
+
           values.forEach((key, value) async {
-            if (value is Map &&
-                value.containsKey('image') &&
-                value['image'] != '') {
-              playlistImages[key] = value['image'] as String;
+            String playlistId = key;
+            String playlistName = value['name'] as String;
+
+            loadedPlaylists.add({
+              'id': playlistId,
+              'name': playlistName,
+            });
+
+            // Carregar a imagem da playlist
+            if (value.containsKey('image') && value['image'] != '') {
+              playlistImages[playlistId] = value['image'] as String;
             } else {
-              playlistImages[key] = null; // Sem imagem
+              playlistImages[playlistId] = null; // Sem imagem
             }
-            // Verifica e conta quantos livros estão no ramo 'books'
-            if (value is Map && value.containsKey('books')) {
-              DataSnapshot booksSnapshot = await ref.child('$key/books').get();
+
+            // Contar o número de livros
+            if (value.containsKey('books')) {
+              DataSnapshot booksSnapshot =
+                  await ref.child('$playlistId/books').get();
               int bookCount = booksSnapshot.children.length;
-              setState(() {
-                bookCounts[key] = bookCount;
-              });
+              bookCounts[playlistId] = bookCount;
             } else {
-              setState(() {
-                bookCounts[key] = 0; // Playlist sem livros
-              });
+              bookCounts[playlistId] = 0; // Playlist sem livros
             }
           });
-        });
-      } else {
-        setState(() {
-          playlists = ['Favorites'];
+
+          playlists = loadedPlaylists; // Atualiza a lista de playlists
         });
       }
     }
@@ -98,16 +98,18 @@ class LibraryPageState extends State<LibraryPage> {
             ? const Center(child: Text("No playlists available."))
             : GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // 2 colunas, semelhante à imagem fornecida
+                  crossAxisCount: 2, // 2 colunas
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                   childAspectRatio: 0.8, // Ajusta a proporção dos cards
                 ),
                 itemCount: playlists.length,
                 itemBuilder: (context, index) {
-                  String playlistName = playlists[index];
-                  String? imageUrl = playlistImages[playlistName];
-                  int bookCount = bookCounts[playlistName] ?? 0;
+                  String playlistId = playlists[index]['id'];
+                  String playlistName =
+                      playlists[index]['name']; // Obtém o nome da playlist
+                  String? imageUrl = playlistImages[playlistId];
+                  int bookCount = bookCounts[playlistId] ?? 0;
 
                   return GestureDetector(
                     onTap: () {
@@ -116,13 +118,16 @@ class LibraryPageState extends State<LibraryPage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => PlaylistDetailPage(
-                            playlistName: playlistName,
+                            playlistId: playlistId, // Passa o ID da playlist
+                            playlistName:
+                                playlistName, // Passa o nome da playlist
                             imageUrl: imageUrl,
                           ),
                         ),
                       );
                     },
-                    onLongPress: () => _showDeleteDialog(playlistName),
+                    onLongPress: () =>
+                        _showDeleteDialog(playlistId, playlistName),
                     child: Column(
                       children: [
                         Expanded(
@@ -151,7 +156,7 @@ class LibraryPageState extends State<LibraryPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '$playlistName - $bookCount books',
+                          '$playlistName - $bookCount books', // Exibe o nome da playlist
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -185,57 +190,19 @@ class LibraryPageState extends State<LibraryPage> {
     );
   }
 
-  // Mostra o diálogo de confirmação de exclusão se não for a playlist "Favorites"
-  void _showDeleteDialog(String playlistName) {
-    if (playlistName != "Favorites") {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Delete Playlist'),
-            content: Text('Are you sure you want to delete $playlistName?'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Fecha o diálogo
-                },
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Fecha o diálogo
-                  _deletePlaylist(playlistName); // Chama função de deletar
-                },
-                child: const Text('Yes'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Favorites playlist cannot be deleted."),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
   // Função para excluir uma playlist
-  Future<void> _deletePlaylist(String playlistName) async {
+  Future<void> _deletePlaylist(String playlistId) async {
     User? user = _auth.currentUser;
     if (user != null) {
-      // remove a foto da playlist do Firebase Storage
-      if (playlistImages[playlistName] != null) {
+      // Remove a foto da playlist do Firebase Storage
+      if (playlistImages[playlistId] != null) {
         await FirebaseStorage.instance
-            .ref('bookshelf/${user.uid}/$playlistName')
+            .ref('bookshelf/${user.uid}/$playlistId')
             .delete();
       }
 
-      await _database.ref('bookshelf/${user.uid}/$playlistName').remove();
+      // Remove a playlist do Realtime Database
+      await _database.ref('bookshelf/${user.uid}/$playlistId').remove();
       _loadPlaylists(); // Recarrega as playlists após a exclusão
     }
   }
@@ -247,21 +214,15 @@ class LibraryPageState extends State<LibraryPage> {
       User? user = _auth.currentUser;
       if (user != null) {
         DatabaseReference ref = _database.ref('bookshelf/${user.uid}');
-        final snapshot = await ref.child(newPlaylistName).get();
-        if (snapshot.exists) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Playlist already exists! Try a different name."),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        } else {
-          await ref.child(newPlaylistName).set(
-              {'empty': true}); // Salva a nova playlist no Realtime Database
-          _loadPlaylists(); // Recarrega as playlists
-        }
+        DatabaseReference newPlaylistRef = ref.push(); // Gera um ID único
+        // ignore: unused_local_variable
+        String playlistId = newPlaylistRef.key!;
+
+        await newPlaylistRef.set({
+          'name': newPlaylistName,
+        });
+
+        _loadPlaylists(); // Recarrega as playlists
       }
     }
   }
@@ -301,5 +262,44 @@ class LibraryPageState extends State<LibraryPage> {
         );
       },
     );
+  }
+
+  // Mostra o diálogo de confirmação de exclusão se não for a playlist "Favorites"
+  void _showDeleteDialog(String playlistId, String playlistName) {
+    if (playlistName != "Favorites") {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Delete Playlist'),
+            content: Text('Are you sure you want to delete $playlistName?'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Fecha o diálogo
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Fecha o diálogo
+                  _deletePlaylist(playlistId); // Chama função de deletar
+                },
+                child: const Text('Yes'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Favorites playlist cannot be deleted."),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
