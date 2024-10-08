@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import '../home_page.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
+import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart'; // Para obter o diretório temporário
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -21,6 +26,20 @@ class SignUpPageState extends State<SignUpPage> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+
+  Future<File> loadAssetFile(String path) async {
+    // Obtém o diretório temporário
+    final directory = await getTemporaryDirectory();
+    final file = File('${directory.path}/favorites.png');
+
+    // Carrega o arquivo da pasta assets
+    final byteData = await rootBundle.load(path);
+
+    // Escreve os bytes no arquivo
+    await file.writeAsBytes(byteData.buffer.asUint8List());
+
+    return file;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,14 +227,41 @@ class SignUpPageState extends State<SignUpPage> {
                               'email': _email,
                             });
 
-                            // Cria a prateleira padrão 'favorites'
+                            // Cria a prateleira padrão 'Favorites'
                             await FirebaseDatabase.instance
                                 .ref('bookshelf/$uid')
                                 .set({
                               'Favorites':
-                                  // Cria um nó vazio para a prateleira 'favorites'
+                                  // Cria um nó vazio para a prateleira 'Favorites'
                                   {'empty': true}
                             });
+
+                            // Faz o upload da imagem da prateleira 'favorites' para o Firebase Storage
+                            try {
+                              // Carrega o arquivo das assets
+                              File file = await loadAssetFile(
+                                  'assets/images/favorites.png');
+
+                              // Faz o upload do arquivo para o Firebase Storage
+                              await FirebaseStorage.instance
+                                  .ref('bookshelf/$uid/Favorites')
+                                  .putFile(file);
+
+                              // Obtém a URL da imagem
+                              String downloadUrl = await FirebaseStorage
+                                  .instance
+                                  .ref('bookshelf/$uid/Favorites')
+                                  .getDownloadURL();
+
+                              // Atualiza a URL na Realtime Database
+                              await FirebaseDatabase.instance
+                                  .ref('bookshelf/$uid/Favorites')
+                                  .update({
+                                'image': downloadUrl,
+                              });
+                            } catch (e) {
+                              Logger().e('Error uploading image: $e');
+                            }
 
                             // Armazena o username e email no SharedPreferences
                             SharedPreferences prefs =
