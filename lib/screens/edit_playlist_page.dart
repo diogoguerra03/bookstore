@@ -191,7 +191,9 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
                       height: 150) // Exibe a imagem escolhida
                   : (_playlistImageUrl != null && _playlistImageUrl!.isNotEmpty
                       ? Image.network(_playlistImageUrl!,
-                          height: 150) // Exibe a imagem atual
+                          height: 150,
+                          width: 150,
+                          fit: BoxFit.cover) // Exibe a imagem atual
                       : const Icon(Icons.book,
                           size: 100, color: Colors.blue)), // Ícone padrão
             ),
