@@ -1,3 +1,4 @@
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -227,6 +228,13 @@ class LibraryPageState extends State<LibraryPage> {
   Future<void> _deletePlaylist(String playlistName) async {
     User? user = _auth.currentUser;
     if (user != null) {
+      // remove a foto da playlist do Firebase Storage
+      if (playlistImages[playlistName] != null) {
+        await FirebaseStorage.instance
+            .ref('bookshelf/${user.uid}/$playlistName')
+            .delete();
+      }
+
       await _database.ref('bookshelf/${user.uid}/$playlistName').remove();
       _loadPlaylists(); // Recarrega as playlists após a exclusão
     }

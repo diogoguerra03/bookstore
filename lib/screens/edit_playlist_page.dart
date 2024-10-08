@@ -155,6 +155,7 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
           _imageFile = null; // Limpa o arquivo da imagem
         });
 
+        if (!mounted) return; // Verifica se a página ainda está aberta
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Playlist image removed successfully!'),
@@ -164,6 +165,7 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
         );
       } catch (e) {
         Logger().e('Error removing image: $e');
+        if (!mounted) return; // Verifica se a página ainda está aberta
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to remove playlist image.'),
