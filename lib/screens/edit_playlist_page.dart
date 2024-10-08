@@ -181,7 +181,11 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
           children: [
             // Exibe a imagem atual da playlist ou um ícone padrão
             GestureDetector(
-              onTap: _pickImage, // Permite escolher uma nova imagem ao clicar
+              onTap: () {
+                if (widget.playlistName != 'Favorites') {
+                  _pickImage(); // Permite escolher uma nova imagem ao clicar
+                }
+              },
               child: _imageFile != null
                   ? Image.file(_imageFile!,
                       height: 150) // Exibe a imagem escolhida
@@ -192,12 +196,14 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
                           size: 100, color: Colors.blue)), // Ícone padrão
             ),
             const SizedBox(height: 8),
-            const Text('Tap to change image',
-                style: TextStyle(color: Colors.grey)),
+            if (widget.playlistName != 'Favorites')
+              const Text('Tap to change image',
+                  style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 8),
             if (_playlistImageUrl != null &&
-                _playlistImageUrl!
-                    .isNotEmpty) // Exibe o botão somente se houver uma imagem
+                _playlistImageUrl!.isNotEmpty &&
+                widget.playlistName !=
+                    'Favorites') // Exibe o botão somente se houver uma imagem
               SizedBox(
                 width: 150, // Largura do botão
                 child: ElevatedButton(
@@ -212,6 +218,7 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
             const SizedBox(height: 16),
             TextField(
               controller: _nameController,
+              enabled: widget.playlistName != 'Favorites',
               decoration: InputDecoration(
                 labelText: 'Playlist Name',
                 border: const OutlineInputBorder(),

@@ -31,6 +31,7 @@ class LibraryPageState extends State<LibraryPage> {
   }
 
   // Carrega playlists do Realtime Database
+  // Carrega playlists do Realtime Database
   void _loadPlaylists() async {
     User? user = _auth.currentUser;
     if (user != null) {
@@ -70,6 +71,13 @@ class LibraryPageState extends State<LibraryPage> {
             } else {
               bookCounts[playlistId] = 0; // Playlist sem livros
             }
+          });
+
+          // Garante que 'Favorites' fique sempre em primeiro
+          loadedPlaylists.sort((a, b) {
+            if (a['name'] == 'Favorites') return -1;
+            if (b['name'] == 'Favorites') return 1;
+            return a['name'].compareTo(b['name']);
           });
 
           playlists = loadedPlaylists; // Atualiza a lista de playlists
@@ -213,6 +221,35 @@ class LibraryPageState extends State<LibraryPage> {
     if (newPlaylistName != null && newPlaylistName.isNotEmpty) {
       User? user = _auth.currentUser;
       if (user != null) {
+        // verifica se a playlist já existe
+        if (playlists.any((playlist) => playlist['name'] == newPlaylistName)) {
+          if (!mounted) return; // Verifica se a página ainda está aberta
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Playlist already exists."),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
+        // verifica se o nome da playlist é válido (1 caractere a 20)
+        if (newPlaylistName.isEmpty || newPlaylistName.length > 20) {
+          if (!mounted) return; // Verifica se a página ainda está aberta
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  "Playlist name must be between 1 and 20 characters long."),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
         DatabaseReference ref = _database.ref('bookshelf/${user.uid}');
         DatabaseReference newPlaylistRef = ref.push(); // Gera um ID único
         // ignore: unused_local_variable
