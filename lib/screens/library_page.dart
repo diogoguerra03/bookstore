@@ -4,6 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'home_page.dart';
 import 'auth/profile_page.dart';
+import 'playlist_detail_page.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -104,7 +105,20 @@ class LibraryPageState extends State<LibraryPage> {
                   String playlistName = playlists[index];
                   String? imageUrl = playlistImages[playlistName];
                   int bookCount = bookCounts[playlistName] ?? 0;
+
                   return GestureDetector(
+                    onTap: () {
+                      // Navega para a página de detalhes da playlist
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PlaylistDetailPage(
+                            playlistName: playlistName,
+                            imageUrl: imageUrl,
+                          ),
+                        ),
+                      );
+                    },
                     onLongPress: () => _showDeleteDialog(playlistName),
                     child: Column(
                       children: [

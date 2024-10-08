@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/book_service.dart';
 import '../models/book_model.dart';
-import 'detail_page.dart'; // Certifique-se de importar a página de detalhes
+import 'book_detail_page.dart'; // Certifique-se de importar a página de detalhes
 
 class GenrePage extends StatefulWidget {
   final String genre;
