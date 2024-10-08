@@ -48,7 +48,9 @@ class LibraryPageState extends State<LibraryPage> {
         setState(() {
           playlists = loadedPlaylists;
           values.forEach((key, value) async {
-            if (value is Map && value.containsKey('image')) {
+            if (value is Map &&
+                value.containsKey('image') &&
+                value['image'] != '') {
               playlistImages[key] = value['image'] as String;
             } else {
               playlistImages[key] = null; // Sem imagem

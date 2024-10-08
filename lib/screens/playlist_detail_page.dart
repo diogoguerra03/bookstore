@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'edit_playlist_page.dart';
 
 class PlaylistDetailPage extends StatefulWidget {
   final String playlistName;
@@ -56,6 +57,15 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
             icon: const Icon(Icons.edit),
             onPressed: () {
               // Função para editar playlist
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditPlaylistPage(
+                    playlistName: widget.playlistName,
+                    imageUrl: widget.imageUrl,
+                  ),
+                ),
+              );
             },
           ),
         ],
@@ -66,7 +76,8 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
           children: [
             // Imagem e informações da playlist
             if (widget.imageUrl != null)
-              Image.network(widget.imageUrl!)
+              Image.network(widget.imageUrl!,
+                  height: 250, width: 250, fit: BoxFit.cover)
             else
               const Icon(Icons.book, size: 100, color: Colors.blue),
             const SizedBox(height: 16),
