@@ -1,5 +1,6 @@
 import 'package:bookstore/screens/home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login.dart';
 import '../../widgets/bottom_nav_bar.dart';
@@ -20,11 +21,14 @@ class ProfilePageState extends State<ProfilePage> {
   String email = 'user@example.com'; // Placeholder para o email
   String uid = '';
   String avatarUrl = ''; // URL da imagem do avatar
+  int playlistCount = 0; // Contador de playlists
+  int bookCount = 0; // Contador de livros únicos
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadPlaylistStatistics();
   }
 
   // Função para carregar o UID e os dados do usuário
@@ -50,6 +54,48 @@ class ProfilePageState extends State<ProfilePage> {
           });
         }
       });
+    }
+  }
+
+  // Função para carregar as estatísticas das playlists e livros
+  void _loadPlaylistStatistics() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    uid = prefs.getString('uid') ?? ''; // Carrega o UID do SharedPreferences
+
+    if (uid.isNotEmpty) {
+      DatabaseReference ref = FirebaseDatabase.instance.ref('bookshelf/$uid');
+      DataSnapshot snapshot = await ref.get();
+
+      if (snapshot.exists) {
+        Map<dynamic, dynamic> values = snapshot.value as Map<dynamic, dynamic>;
+
+        // Verificar o conteúdo das playlists
+        Logger().i("Playlists carregadas: $values");
+
+        // Atualiza o contador de playlists
+        setState(() {
+          playlistCount = values.keys.length;
+        });
+
+        // Contar livros únicos em todas as playlists
+        Set<String> uniqueBooks = {};
+        values.forEach((key, value) {
+          if (value is Map && value.containsKey('books')) {
+            Map<dynamic, dynamic> books =
+                value['books'] as Map<dynamic, dynamic>;
+            uniqueBooks.addAll(books.keys.cast<String>());
+          }
+        });
+
+        // Atualiza o contador de livros com o tamanho do conjunto de livros únicos
+        setState(() {
+          bookCount = uniqueBooks.length;
+        });
+      } else {
+        setState(() {
+          playlistCount = 0; // Define para 0 caso não encontre playlists
+        });
+      }
     }
   }
 
@@ -145,7 +191,7 @@ class ProfilePageState extends State<ProfilePage> {
               height: 2,
             ),
             const SizedBox(height: 20),
-            _buildStatistics(),
+            _buildStatistics(), // Chama a função que exibe as estatísticas
           ],
         ),
       ),
@@ -175,14 +221,24 @@ class ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildStatistics() {
-    return const Column(
+    return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(child: _StatisticCard(title: 'Playlists', count: '3')),
-            SizedBox(width: 16),
-            Expanded(child: _StatisticCard(title: 'Saved Books', count: '10')),
+            Expanded(
+              child: _StatisticCard(
+                title: 'Playlists',
+                count: playlistCount.toString(),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _StatisticCard(
+                title: 'Saved Books',
+                count: bookCount.toString(),
+              ),
+            ),
           ],
         ),
       ],
