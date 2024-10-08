@@ -203,7 +203,7 @@ class HomePageState extends State<HomePage> {
   Widget buildSearchBookItem(Book book) {
     String coverUrl = book.coverId != 0
         ? 'https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg'
-        : 'assets/images/No_Cover.jpg'; // Imagem alternativa
+        : ''; //  Icon padrão em caso de erro
 
     return GestureDetector(
       onTap: () {
