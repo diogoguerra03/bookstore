@@ -23,26 +23,25 @@ class LibraryPageState extends State<LibraryPage> {
       {}; // Mapa para armazenar URLs das imagens das playlists
   Map<String, int> bookCounts =
       {}; // Mapa para armazenar a contagem de livros por playlist
+  late DatabaseReference ref;
 
   @override
   void initState() {
     super.initState();
-    _loadPlaylists();
+    _addPlaylistListener(); // Adiciona o listener para carregar as playlists automaticamente
   }
 
-  // Carrega playlists do Realtime Database
-  // Carrega playlists do Realtime Database
-  void _loadPlaylists() async {
+  // Adiciona um listener para escutar as mudanças em tempo real nas playlists
+  void _addPlaylistListener() {
     User? user = _auth.currentUser;
     if (user != null) {
-      DatabaseReference ref = _database.ref('bookshelf/${user.uid}');
-      DataSnapshot snapshot = await ref.get();
+      ref = _database.ref('bookshelf/${user.uid}');
+      ref.onValue.listen((event) {
+        if (event.snapshot.exists) {
+          Map<dynamic, dynamic> values =
+              event.snapshot.value as Map<dynamic, dynamic>;
+          List<Map<String, dynamic>> loadedPlaylists = [];
 
-      if (snapshot.exists) {
-        Map<dynamic, dynamic> values = snapshot.value as Map<dynamic, dynamic>;
-        List<Map<String, dynamic>> loadedPlaylists = [];
-
-        setState(() {
           playlistImages.clear(); // Limpa as imagens antigas
           bookCounts.clear(); // Limpa as contagens antigas
 
@@ -80,10 +79,19 @@ class LibraryPageState extends State<LibraryPage> {
             return a['name'].compareTo(b['name']);
           });
 
-          playlists = loadedPlaylists; // Atualiza a lista de playlists
-        });
-      }
+          setState(() {
+            playlists = loadedPlaylists; // Atualiza a lista de playlists
+          });
+        }
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    // Remove o listener quando a página é destruída
+    ref.onDisconnect();
+    super.dispose();
   }
 
   @override
@@ -211,7 +219,6 @@ class LibraryPageState extends State<LibraryPage> {
 
       // Remove a playlist do Realtime Database
       await _database.ref('bookshelf/${user.uid}/$playlistId').remove();
-      _loadPlaylists(); // Recarrega as playlists após a exclusão
     }
   }
 
@@ -252,14 +259,11 @@ class LibraryPageState extends State<LibraryPage> {
 
         DatabaseReference ref = _database.ref('bookshelf/${user.uid}');
         DatabaseReference newPlaylistRef = ref.push(); // Gera um ID único
-        // ignore: unused_local_variable
         String playlistId = newPlaylistRef.key!;
 
         await newPlaylistRef.set({
           'name': newPlaylistName,
         });
-
-        _loadPlaylists(); // Recarrega as playlists
       }
     }
   }

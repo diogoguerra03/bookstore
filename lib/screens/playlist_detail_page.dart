@@ -23,40 +23,81 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseDatabase _database = FirebaseDatabase.instance;
   List<Map<String, String>> books = []; // Lista de livros da playlist
+  late DatabaseReference playlistRef; // Referência da playlist
+  String? playlistImageUrl;
+  String playlistName = ''; // Para manter o nome atualizado
 
   @override
   void initState() {
     super.initState();
-    _loadBooks();
+    _addPlaylistListener(); // Adiciona o listener para escutar mudanças em tempo real
   }
 
-  // Carregar os livros da playlist
-  void _loadBooks() async {
+  // Adiciona um listener para escutar mudanças na playlist em tempo real
+  void _addPlaylistListener() {
     User? user = _auth.currentUser;
     if (user != null) {
-      DatabaseReference ref =
-          _database.ref('bookshelf/${user.uid}/${widget.playlistId}/books');
-      DataSnapshot snapshot = await ref.get();
+      playlistRef = _database.ref('bookshelf/${user.uid}/${widget.playlistId}');
 
-      if (snapshot.exists) {
-        Map<dynamic, dynamic> values = snapshot.value as Map<dynamic, dynamic>;
-        setState(() {
-          books = values.entries
-              .map((entry) => {
-                    'title': entry.key.toString(),
-                    'author': entry.value.toString()
-                  })
-              .toList();
-        });
-      }
+      // Listener para mudanças no conteúdo da playlist (nome, imagem e livros)
+      playlistRef.onValue.listen((event) {
+        if (event.snapshot.exists) {
+          Map<dynamic, dynamic> values =
+              event.snapshot.value as Map<dynamic, dynamic>;
+
+          // Atualiza o nome da playlist
+          if (values.containsKey('name')) {
+            setState(() {
+              playlistName = values['name'] as String;
+            });
+          }
+
+          // Atualiza a imagem da playlist
+          if (values.containsKey('image') && values['image'] != '') {
+            setState(() {
+              playlistImageUrl = values['image'] as String?;
+            });
+          } else {
+            setState(() {
+              playlistImageUrl = null;
+            });
+          }
+
+          // Atualiza a lista de livros
+          if (values.containsKey('books')) {
+            Map<dynamic, dynamic> bookValues =
+                values['books'] as Map<dynamic, dynamic>;
+            setState(() {
+              books = bookValues.entries
+                  .map((entry) => {
+                        'title': entry.key.toString(),
+                        'author': entry.value.toString()
+                      })
+                  .toList();
+            });
+          } else {
+            setState(() {
+              books = [];
+            });
+          }
+        }
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    // Remove o listener quando a página for destruída
+    playlistRef.onDisconnect();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.playlistName),
+        title:
+            Text(playlistName.isNotEmpty ? playlistName : widget.playlistName),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -67,8 +108,10 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
                 MaterialPageRoute(
                   builder: (context) => EditPlaylistPage(
                     playlistId: widget.playlistId, // Agora passamos o ID
-                    playlistName: widget.playlistName,
-                    imageUrl: widget.imageUrl,
+                    playlistName: playlistName.isNotEmpty
+                        ? playlistName
+                        : widget.playlistName,
+                    imageUrl: playlistImageUrl ?? widget.imageUrl,
                   ),
                 ),
               );
@@ -81,13 +124,12 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
         child: Column(
           children: [
             // Imagem e informações da playlist
-            if (widget.imageUrl != null)
-              Image.network(widget.imageUrl!,
-                  height: 250, width: 250, fit: BoxFit.cover)
-            else
-              const Icon(Icons.book, size: 100, color: Colors.blue),
+            playlistImageUrl != null
+                ? Image.network(playlistImageUrl!,
+                    height: 250, width: 250, fit: BoxFit.cover)
+                : const Icon(Icons.book, size: 100, color: Colors.blue),
             const SizedBox(height: 16),
-            Text(widget.playlistName,
+            Text(playlistName.isNotEmpty ? playlistName : widget.playlistName,
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
@@ -105,7 +147,7 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
                   prefixIcon: const Icon(Icons.search),
                 ),
                 onChanged: (value) {
-                  // Função para filtrar os livros
+                  // Função para filtrar os livros (opcional)
                 },
               ),
             ),
