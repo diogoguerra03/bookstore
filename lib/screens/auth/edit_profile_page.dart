@@ -250,6 +250,9 @@ class EditProfilePageState extends State<EditProfilePage> {
                             : null,
                       ),
                     ),
+                    const SizedBox(height: 10),
+                    const Text('Tap to change image',
+                        style: TextStyle(color: Colors.grey)),
                     const SizedBox(height: 20),
                     // Botão para remover a imagem de perfil
                     if (_avatarUrl.isNotEmpty ||
