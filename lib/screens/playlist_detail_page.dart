@@ -141,7 +141,7 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
             // Imagem e informações da playlist
             playlistImageUrl != null
                 ? Image.network(playlistImageUrl!,
-                    height: 250, width: 250, fit: BoxFit.cover)
+                    height: 150, width: 150, fit: BoxFit.cover)
                 : const Icon(Icons.book, size: 100, color: Colors.blue),
             const SizedBox(height: 16),
             Text(playlistName.isNotEmpty ? playlistName : widget.playlistName,
@@ -174,10 +174,17 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
                 itemBuilder: (context, index) {
                   final book = books[index];
                   return ListTile(
+                    // Dentro de 'ListTile', ajuste no leading
                     leading: book.coverUrl.isNotEmpty
-                        ? Image.network(book.coverUrl,
-                            width: 50, height: 50, fit: BoxFit.cover)
+                        ? Image.network(
+                            book.coverUrl,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit
+                                .contain, // Mude para BoxFit.contain para não cortar a imagem
+                          )
                         : const Icon(Icons.book, size: 50, color: Colors.blue),
+
                     title: Text(book.title),
                     subtitle: Text(book.authors.isNotEmpty
                         ? book.authors.join(', ')

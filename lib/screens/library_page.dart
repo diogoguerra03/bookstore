@@ -63,9 +63,9 @@ class LibraryPageState extends State<LibraryPage> {
 
             // Contar o número de livros
             if (value.containsKey('books')) {
-              DataSnapshot booksSnapshot =
-                  await ref.child('$playlistId/books').get();
-              int bookCount = booksSnapshot.children.length;
+              Map<dynamic, dynamic> booksMap =
+                  value['books'] as Map<dynamic, dynamic>;
+              int bookCount = booksMap.length;
               bookCounts[playlistId] = bookCount;
             } else {
               bookCounts[playlistId] = 0; // Playlist sem livros
