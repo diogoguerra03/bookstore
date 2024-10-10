@@ -143,69 +143,71 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: NotificationListener<ScrollNotification>(
-        onNotification: (ScrollNotification scrollInfo) {
-          return false;
-        },
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight:
-                  300.0, // Mantém o tamanho da imagem e da área superior
-              pinned: true,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Column(
-                  children: [
-                    const SizedBox(height: 85),
-                    // Imagem da playlist
-                    playlistImageUrl != null
-                        ? Image.network(
-                            playlistImageUrl!,
-                            height: 150, // Mantém a altura da imagem
-                            width: 150,
-                            fit: BoxFit.cover,
-                          )
-                        : const Icon(Icons.book, size: 100, color: Colors.blue),
-                    const SizedBox(height: 16),
-                    // Nome da playlist
-                    Text(
-                        playlistName.isNotEmpty
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight:
+                300.0, // Mantém o tamanho da imagem e da área superior
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Column(
+                children: [
+                  const SizedBox(height: 85),
+                  // Imagem da playlist
+                  playlistImageUrl != null
+                      ? Image.network(
+                          playlistImageUrl!,
+                          height: 150, // Mantém a altura da imagem
+                          width: 150,
+                          fit: BoxFit.cover,
+                        )
+                      : const Icon(Icons.book, size: 100, color: Colors.blue),
+                  const SizedBox(height: 16),
+                  // Nome da playlist
+                  Text(
+                      playlistName.isNotEmpty
+                          ? playlistName
+                          : widget.playlistName,
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('${filteredBooks.length} books',
+                      style: const TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditPlaylistPage(
+                        playlistId: widget.playlistId,
+                        playlistName: playlistName.isNotEmpty
                             ? playlistName
                             : widget.playlistName,
-                        style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text('${filteredBooks.length} books',
-                        style: const TextStyle(color: Colors.grey)),
-                  ],
-                ),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EditPlaylistPage(
-                          playlistId: widget.playlistId,
-                          playlistName: playlistName.isNotEmpty
-                              ? playlistName
-                              : widget.playlistName,
-                          imageUrl: playlistImageUrl ?? widget.imageUrl,
-                        ),
+                        imageUrl: playlistImageUrl ?? widget.imageUrl,
                       ),
-                    );
-                  },
-                ),
-              ],
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            floating: false,
+            delegate: _SliverAppBarDelegate(
+              minHeight: 140.0, // Altura mínima da barra de pesquisa
+              maxHeight: 140.0, // Altura máxima da barra de pesquisa
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0, vertical: 10.0), // Ajusta o padding
                 child: Column(
                   children: [
-                    // Dropdown para escolher entre título ou autor
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -227,7 +229,9 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(
+                        height:
+                            8), // Espaçamento entre dropdown e barra de pesquisa
                     // Barra de pesquisa
                     TextField(
                       controller: TextEditingController(text: searchTerm),
@@ -255,35 +259,66 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
                 ),
               ),
             ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final book = filteredBooks[index];
-                  return ListTile(
-                    leading: book.coverUrl.isNotEmpty
-                        ? Image.network(book.coverUrl,
-                            width: 50, height: 50, fit: BoxFit.contain)
-                        : const Icon(Icons.book, size: 50, color: Colors.blue),
-                    title: Text(book.title),
-                    subtitle: Text(book.authors.isNotEmpty
-                        ? book.authors.join(', ')
-                        : 'Unknown Author'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BookDetailPage(book: book),
-                        ),
-                      );
-                    },
-                  );
-                },
-                childCount: filteredBooks.length,
-              ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final book = filteredBooks[index];
+                return ListTile(
+                  leading: book.coverUrl.isNotEmpty
+                      ? Image.network(book.coverUrl,
+                          width: 50, height: 50, fit: BoxFit.contain)
+                      : const Icon(Icons.book, size: 50, color: Colors.blue),
+                  title: Text(book.title),
+                  subtitle: Text(book.authors.isNotEmpty
+                      ? book.authors.join(', ')
+                      : 'Unknown Author'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BookDetailPage(book: book),
+                      ),
+                    );
+                  },
+                );
+              },
+              childCount: filteredBooks.length,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  final double minHeight;
+  final double maxHeight;
+  final Widget child;
+
+  _SliverAppBarDelegate({
+    required this.minHeight,
+    required this.maxHeight,
+    required this.child,
+  });
+
+  @override
+  double get minExtent => minHeight;
+
+  @override
+  double get maxExtent => maxHeight;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return SizedBox.expand(child: child);
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return maxHeight != oldDelegate.maxHeight ||
+        minHeight != oldDelegate.minHeight ||
+        child != oldDelegate.child;
   }
 }
