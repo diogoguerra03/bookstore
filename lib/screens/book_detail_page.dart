@@ -1,16 +1,36 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../models/book_model.dart';
 
 class BookDetailPage extends StatelessWidget {
   final Book book;
+  final DatabaseReference database = FirebaseDatabase.instance.ref();
 
-  const BookDetailPage({super.key, required this.book});
+  BookDetailPage({super.key, required this.book});
+
+  void _showPlaylistDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return PlaylistDialog(bookId: book.id);
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Book Details'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.playlist_add),
+            onPressed: () {
+              _showPlaylistDialog(context);
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -18,14 +38,12 @@ class BookDetailPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Linha superior: capa à esquerda e título/autor/publisher/categorias à direita
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Capa do livro
                   SizedBox(
-                    width: 120, // Definir a largura da capa
-                    height: 180, // Definir a altura da capa
+                    width: 120,
+                    height: 180,
                     child: Image.network(
                       book.coverUrl,
                       fit: BoxFit.cover,
@@ -36,21 +54,16 @@ class BookDetailPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-
-                  // Título, Autor, Publisher e Categorias
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Título em negrito
                         Text(
                           book.title,
                           style: const TextStyle(
                               fontSize: 22, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-
-                        // Autor com ícone de pessoa
                         Row(
                           children: [
                             const Icon(Icons.person, size: 20),
@@ -64,8 +77,6 @@ class BookDetailPage extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-
-                        // Publisher
                         Row(
                           children: [
                             const Icon(Icons.business, size: 20),
@@ -74,8 +85,6 @@ class BookDetailPage extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-
-                        // Categorias
                         Row(
                           children: [
                             const Icon(Icons.category, size: 20),
@@ -88,41 +97,31 @@ class BookDetailPage extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 40),
-
-              // Scroll horizontal com estatísticas, centralizado e maior
               Center(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Número de páginas
                       buildStatItem(
                         icon: Icons.menu_book,
                         label: 'Pages',
                         value: book.pageCount.toString(),
                       ),
                       const SizedBox(width: 32),
-
-                      // Publicado
                       buildStatItem(
                         icon: Icons.calendar_today,
                         label: 'Published',
                         value: book.publishedDate,
                       ),
                       const SizedBox(width: 32),
-
-                      // Rating
                       buildStatItem(
                         icon: Icons.star,
                         label: 'Rating',
                         value: book.averageRating.toString(),
                       ),
                       const SizedBox(width: 32),
-
-                      // Reviews
                       buildStatItem(
                         icon: Icons.rate_review,
                         label: 'Reviews',
@@ -132,10 +131,7 @@ class BookDetailPage extends StatelessWidget {
                   ),
                 ),
               ),
-
               const SizedBox(height: 40),
-
-              // Descrição
               const Text(
                 'Description:',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -152,20 +148,122 @@ class BookDetailPage extends StatelessWidget {
     );
   }
 
-  // Função para criar os itens de estatística no scroll horizontal
   Widget buildStatItem(
       {required IconData icon, required String label, required String value}) {
     return Column(
       children: [
-        Icon(icon, size: 32), // Maior ícone
+        Icon(icon, size: 32),
         const SizedBox(height: 4),
         Text(value,
-            style: const TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold)), // Valor maior
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(label,
-            style: const TextStyle(
-                fontSize: 14, color: Colors.grey)), // Texto maior
+        Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+      ],
+    );
+  }
+}
+
+// Dialog para selecionar playlists
+class PlaylistDialog extends StatefulWidget {
+  final String bookId;
+
+  const PlaylistDialog({super.key, required this.bookId});
+
+  @override
+  PlaylistDialogState createState() => PlaylistDialogState();
+}
+
+class PlaylistDialogState extends State<PlaylistDialog> {
+  final DatabaseReference database = FirebaseDatabase.instance.ref();
+  final Map<String, bool> _selectedPlaylists = {};
+  final Map<String, String> _playlistNames = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlaylists();
+  }
+
+  Future<void> _loadPlaylists() async {
+    try {
+      final FirebaseAuth _auth = FirebaseAuth.instance;
+      String uid = _auth.currentUser!.uid;
+
+      DatabaseReference playlistRef = database.child('bookshelf').child(uid);
+      DataSnapshot snapshot = await playlistRef.get();
+
+      if (snapshot.exists) {
+        Map<String, dynamic> playlists =
+            Map<String, dynamic>.from(snapshot.value as Map);
+
+        playlists.forEach((key, value) {
+          _selectedPlaylists[key] = false;
+          _playlistNames[key] = value['name'] ?? 'Unnamed Playlist';
+        });
+      }
+    } catch (e) {
+      // Handle error properly, maybe log or show a snackbar
+      print("Error loading playlists: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _addToPlaylists() async {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    String uid = _auth.currentUser!.uid;
+
+    DatabaseReference userBookshelfRef = database.child('bookshelf').child(uid);
+    _selectedPlaylists.forEach((playlistId, isSelected) {
+      if (isSelected) {
+        userBookshelfRef
+            .child(playlistId)
+            .child('books')
+            .push()
+            .set({'bookId': widget.bookId});
+      }
+    });
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Select Playlists'),
+      content: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: _selectedPlaylists.keys.map((playlistId) {
+                  return CheckboxListTile(
+                    title: Text(_playlistNames[playlistId] ?? playlistId),
+                    value: _selectedPlaylists[playlistId],
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _selectedPlaylists[playlistId] = value!;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _addToPlaylists,
+          child: const Text('Add'),
+        ),
       ],
     );
   }
