@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:logger/logger.dart'; // Para logs
+import '../models/book_model.dart'; // Importa o modelo de livro
 
 class EditPlaylistPage extends StatefulWidget {
   final String playlistId; // Agora recebe o ID da playlist
@@ -29,13 +30,83 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
   File? _imageFile; // Para armazenar a imagem selecionada
   String? _playlistImageUrl; // Para armazenar a URL da imagem da playlist
   String? _errorText; // Para exibir mensagens de erro no nome da playlist
+  List<Book> books = []; // Lista de livros da playlist
 
   @override
   void initState() {
     super.initState();
     _nameController.text = widget.playlistName;
-    _playlistImageUrl =
-        widget.imageUrl; // Inicializa com a imagem atual da playlist
+    _playlistImageUrl = widget.imageUrl;
+    _loadBooks(); // Carrega os livros da playlist ao inicializar
+  }
+
+  // Função para carregar os livros da playlist
+  void _loadBooks() {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      DatabaseReference playlistBooksRef =
+          _database.ref('bookshelf/${user.uid}/${widget.playlistId}/books');
+
+      playlistBooksRef.onValue.listen((event) {
+        if (event.snapshot.exists) {
+          Map<dynamic, dynamic> booksData =
+              event.snapshot.value as Map<dynamic, dynamic>;
+          setState(() {
+            books = booksData.entries.map((entry) {
+              Map<dynamic, dynamic> bookData =
+                  entry.value as Map<dynamic, dynamic>;
+              return Book(
+                id: entry.key,
+                title: bookData['title'] ?? 'Unknown Title',
+                authors: List<String>.from(
+                    bookData['authors'] ?? ['Unknown Author']),
+                publisher: bookData['publisher'] ?? 'Unknown Publisher',
+                publishedDate: bookData['publishedDate'] ?? 'Unknown Date',
+                description:
+                    bookData['description'] ?? 'No description available',
+                pageCount: bookData['pageCount'] ?? 0,
+                categories: List<String>.from(
+                    bookData['categories'] ?? ['Uncategorized']),
+                averageRating: (bookData['averageRating'] ?? 0).toDouble(),
+                ratingsCount: bookData['ratingsCount'] ?? 0,
+                coverUrl: bookData['coverUrl'] ?? '',
+              );
+            }).toList();
+          });
+        }
+      });
+    }
+  }
+
+  // Função para remover um livro da playlist
+  Future<void> _removeBook(String bookId) async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      DatabaseReference bookRef = _database
+          .ref('bookshelf/${user.uid}/${widget.playlistId}/books/$bookId');
+      try {
+        await bookRef.remove(); // Remove o livro da playlist
+        Logger().i('Book removed: $bookId');
+        if (!mounted) return; // Verifica se a página ainda está aberta
+        setState(() {
+          books.removeWhere(
+              (book) => book.id == bookId); // Atualiza a lista de livros
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Book removed successfully'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } catch (e) {
+        Logger().e('Error removing book: $e');
+        if (!mounted) return; // Verifica se a página ainda está aberta
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to remove book')),
+        );
+      }
+    }
   }
 
   // Função para atualizar o nome e imagem da playlist com validações
@@ -51,11 +122,6 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
     }
 
     if (user != null) {
-      // ignore: unused_local_variable
-      DatabaseReference userPlaylistsRef =
-          _database.ref('bookshelf/${user.uid}');
-
-      // Atualização do nome da playlist (se for diferente)
       DatabaseReference currentRef =
           _database.ref('bookshelf/${user.uid}/${widget.playlistId}');
       if (widget.playlistName != _nameController.text.trim()) {
@@ -204,8 +270,7 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
             const SizedBox(height: 8),
             if (_playlistImageUrl != null &&
                 _playlistImageUrl!.isNotEmpty &&
-                widget.playlistName !=
-                    'Favorites') // Exibe o botão somente se houver uma imagem
+                widget.playlistName != 'Favorites')
               SizedBox(
                 width: 150, // Largura do botão
                 child: ElevatedButton(
@@ -224,7 +289,7 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
               decoration: InputDecoration(
                 labelText: 'Playlist Name',
                 border: const OutlineInputBorder(),
-                errorText: _errorText, // Exibe a mensagem de erro se houver
+                errorText: _errorText,
               ),
               onChanged: (text) {
                 setState(() {
@@ -233,6 +298,25 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
               },
             ),
             const SizedBox(height: 20),
+
+            // Lista de livros na playlist
+            Expanded(
+              child: ListView.builder(
+                itemCount: books.length,
+                itemBuilder: (context, index) {
+                  final book = books[index];
+                  return ListTile(
+                    leading: IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      color: Colors.red,
+                      onPressed: () => _removeBook(book.id), // Remove o livro
+                    ),
+                    title: Text(book.title),
+                    subtitle: Text(book.authors.join(', ')),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
