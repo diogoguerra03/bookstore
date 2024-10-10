@@ -171,7 +171,7 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
                       style: const TextStyle(
                           fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  Text('${filteredBooks.length} books',
+                  Text('${books.length} books',
                       style: const TextStyle(color: Colors.grey)),
                 ],
               ),
