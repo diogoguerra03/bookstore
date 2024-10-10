@@ -122,7 +122,9 @@ class BookDetailPage extends StatelessWidget {
                       buildStatItem(
                         icon: Icons.star,
                         label: 'Rating',
-                        value: book.averageRating.toString(),
+                        value: book.averageRating.toString() == '0.0'
+                            ? 'N/A'
+                            : book.averageRating.toString(),
                       ),
                       const SizedBox(width: 32),
                       buildStatItem(
