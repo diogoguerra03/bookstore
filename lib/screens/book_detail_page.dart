@@ -1,159 +1,125 @@
-import 'package:bookstore/models/book_model.dart';
 import 'package:flutter/material.dart';
-import '../services/book_service.dart'; // Importa o serviço que busca os livros
+import '../models/book_model.dart';
 
-class DetailPage extends StatefulWidget {
-  final String title;
-  final String author;
-  final int coverId;
-  final String workId; // Espera receber o workId do livro
-  final int wantToRead;
-  final int readingCount;
-  final int readCount;
+class BookDetailPage extends StatelessWidget {
+  final Book book;
 
-  const DetailPage({
-    super.key,
-    required this.title,
-    required this.author,
-    required this.coverId,
-    required this.workId,
-    this.wantToRead = 0,
-    this.readingCount = 0,
-    this.readCount = 0,
-  });
-
-  @override
-  DetailPageState createState() => DetailPageState();
-}
-
-class DetailPageState extends State<DetailPage> {
-  late Future<Book> bookDetails;
-
-  @override
-  void initState() {
-    super.initState();
-    // Busca os detalhes do livro com base no workId
-    bookDetails = BookService().fetchBookDetails(widget.workId);
-  }
+  const BookDetailPage({super.key, required this.book});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Book Details'),
+        title: Text(book.title),
       ),
-      body: FutureBuilder<Book>(
-        future: bookDetails,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            final book = snapshot.data!;
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Capa do livro
+              Center(
+                child: Image.network(
+                  book.coverUrl,
+                  height: 200,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset('assets/images/No_Cover.jpg',
+                        height: 200);
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Título
+              Text(
+                book.title,
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+
+              // Autores
+              Row(
                 children: [
-                  // Capa do livro
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Image.network(
-                          'https://covers.openlibrary.org/b/id/${widget.coverId}-L.jpg',
-                          height: 200,
-                        ),
-                      ),
-                      const SizedBox(
-                          width: 20), // Espaçamento entre a imagem e o texto
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(widget.title,
-                                style: const TextStyle(fontSize: 24)),
-                            Text(widget.author,
-                                style: const TextStyle(fontSize: 16)),
-                            const SizedBox(
-                                height:
-                                    24), // Espaçamento antes das estatísticas
-                            // Estatísticas do livro
-                            Row(
-                              children: [
-                                const Icon(Icons.bookmark,
-                                    size: 18), // Ícone para "Want to Read"
-                                const SizedBox(width: 4),
-                                const Text('Want to Read:',
-                                    style: TextStyle(fontSize: 14)),
-                                const SizedBox(width: 4),
-                                Text(widget.wantToRead.toString(),
-                                    style: const TextStyle(fontSize: 14)),
-                              ],
-                            ),
-                            const SizedBox(
-                                height: 8), // Espaçamento entre as linhas
-                            Row(
-                              children: [
-                                const Icon(Icons.open_in_new,
-                                    size: 18), // Ícone para "Reading Count"
-                                const SizedBox(width: 4),
-                                const Text('Reading Count:',
-                                    style: TextStyle(fontSize: 14)),
-                                const SizedBox(width: 4),
-                                Text(widget.readingCount.toString(),
-                                    style: const TextStyle(fontSize: 14)),
-                              ],
-                            ),
-                            const SizedBox(
-                                height: 8), // Espaçamento entre as linhas
-                            Row(
-                              children: [
-                                const Icon(Icons.done,
-                                    size: 18), // Ícone para "Read Count"
-                                const SizedBox(width: 4),
-                                const Text('Read Count:',
-                                    style: TextStyle(fontSize: 14)),
-                                const SizedBox(width: 4),
-                                Text(widget.readCount.toString(),
-                                    style: const TextStyle(fontSize: 14)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(
-                      height: 20), // Espaçamento antes da seção de subjects
-                  const Text('Subjects:',
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  const SizedBox(
-                      height: 4), // Espaço entre o título e os subjects
+                  const Icon(Icons.person, size: 20),
+                  const SizedBox(width: 8),
                   Text(
-                    book.subjects
-                        .take(10)
-                        .join(', '), // Juntar os subjects com vírgulas
-                    style: const TextStyle(
-                        fontSize: 12), // Tamanho do texto dos subjects
+                    book.authors.isNotEmpty
+                        ? book.authors.join(', ')
+                        : 'Unknown Author',
+                    style: const TextStyle(fontSize: 16),
                   ),
-                  const SizedBox(height: 20), // Espaçamento antes da descrição
-                  // Descrição do livro
-                  const Text('Description:',
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 5),
-                  Text(book.description),
                 ],
               ),
-            );
-          } else {
-            return const Center(child: Text('No book details found.'));
-          }
-        },
+              const SizedBox(height: 8),
+
+              // Publisher e Data de Publicação
+              Row(
+                children: [
+                  const Icon(Icons.business, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Publisher: ${book.publisher}'),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Published: ${book.publishedDate}'),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Classificação e contagem de avaliações
+              Row(
+                children: [
+                  const Icon(Icons.star, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Rating: ${book.averageRating}'),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.rate_review, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Reviews: ${book.ratingsCount}'),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Número de páginas
+              Row(
+                children: [
+                  const Icon(Icons.menu_book, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Page Count: ${book.pageCount}'),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Categorias
+              Row(
+                children: [
+                  const Icon(Icons.category, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Categories: ${book.categories.join(', ')}'),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Descrição
+              const Text(
+                'Description:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                book.description,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

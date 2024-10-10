@@ -1,41 +1,54 @@
 class Book {
+  final String id;
   final String title;
-  final String author;
-  final int coverId;
-  final String workId;
+  final List<String> authors;
+  final String publisher;
+  final String publishedDate;
   final String description;
-  final List<String> subjects;
-  final int? wantToRead;
-  final int? readingCount;
-  final int? readCount;
+  final int pageCount;
+  final List<String> categories;
+  final double averageRating;
+  final int ratingsCount;
+  final String coverUrl; // Adicionado o campo coverUrl
 
   Book({
+    required this.id,
     required this.title,
-    required this.author,
-    required this.coverId,
-    required this.workId,
-    this.description = 'No description available',
-    this.subjects = const [], // Inicializa como uma lista vazia
-    this.wantToRead = 0,
-    this.readingCount = 0,
-    this.readCount = 0,
+    required this.authors,
+    required this.publisher,
+    required this.publishedDate,
+    required this.description,
+    required this.pageCount,
+    required this.categories,
+    required this.averageRating,
+    required this.ratingsCount,
+    required this.coverUrl, // Inicialização do campo coverUrl
   });
 
   // Função para transformar o JSON da API num objeto Book
   factory Book.fromJson(Map<String, dynamic> json) {
+    final volumeInfo = json['volumeInfo'];
+
     return Book(
-      title: json['title'] as String,
-      author: json['author_name'] != null && json['author_name'].isNotEmpty
-          ? json['author_name'][0]
-          : 'No author available',
-      coverId: json['cover_i'] ?? 0, // Se não houver cover, usa 0 como padrão
-      workId: json['key'] as String,
-      description: json['description'] ?? 'No description available',
-      subjects: List<String>.from(
-          json['subjects'] ?? []), // Adiciona a lista de subjects
-      wantToRead: json['want_to_read_count'] ?? 0,
-      readingCount: json['currently_reading_count'] ?? 0,
-      readCount: json['already_read_count'] ?? 0,
+      id: json['id'] as String,
+      title: volumeInfo['title'] as String,
+      authors: volumeInfo['authors'] != null
+          ? List<String>.from(volumeInfo['authors'])
+          : ['No authors available'],
+      publisher: volumeInfo['publisher'] ?? 'No publisher available',
+      publishedDate: volumeInfo['publishedDate'] ?? 'No date available',
+      description: volumeInfo['description'] ?? 'No description available',
+      pageCount: volumeInfo['pageCount'] ?? 0,
+      categories: volumeInfo['categories'] != null
+          ? List<String>.from(volumeInfo['categories'])
+          : [],
+      averageRating: volumeInfo['averageRating'] != null
+          ? volumeInfo['averageRating'].toDouble()
+          : 0.0,
+      ratingsCount: volumeInfo['ratingsCount'] ?? 0,
+      coverUrl: volumeInfo['imageLinks'] != null
+          ? volumeInfo['imageLinks']['thumbnail']
+          : '', // Fallback se não houver capa
     );
   }
 }

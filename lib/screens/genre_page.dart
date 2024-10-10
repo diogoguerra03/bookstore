@@ -31,7 +31,7 @@ class GenrePageState extends State<GenrePage> {
     });
 
     BookService()
-        .fetchBooks('subject=${widget.genre}&limit=10', currentPage)
+        .fetchBooks('subject:${widget.genre}', currentPage)
         .then((newBooks) {
       setState(() {
         books.addAll(newBooks);
@@ -59,47 +59,57 @@ class GenrePageState extends State<GenrePage> {
               itemBuilder: (context, index) {
                 if (index < books.length) {
                   // Exibir livros
-                  String coverUrl = books[index].coverId != 0
-                      ? 'https://covers.openlibrary.org/b/id/${books[index].coverId}-L.jpg'
-                      : 'assets/images/No_Cover.jpg'; // Imagem alternativa
+                  String coverUrl = books[index].coverUrl.isNotEmpty
+                      ? books[index].coverUrl
+                      : 'assets/images/No_Cover.jpg'; // Fallback para imagem
 
                   return GestureDetector(
                     onTap: () {
-                      // Navegar para a página de detalhes ao clicar no livro
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => DetailPage(
-                            title: books[index].title,
-                            author: books[index].author,
-                            coverId: books[index].coverId,
-                            workId: books[index].workId,
-                            wantToRead: books[index].wantToRead ?? 0,
-                            readingCount: books[index].readingCount ?? 0,
-                            readCount: books[index].readCount ?? 0,
-                          ),
+                          builder: (context) =>
+                              BookDetailPage(book: books[index]),
                         ),
                       );
                     },
-                    child: ListTile(
-                      leading: Image.network(coverUrl),
-                      title: Text(books[index].title),
-                      subtitle: Text(books[index].author.isNotEmpty
-                          ? books[index].author
-                          : 'Unknown author'),
+                    child: Card(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 16.0),
+                      child: ListTile(
+                        leading: SizedBox(
+                          width: 50, // Definir largura da imagem
+                          height: 80, // Definir altura da imagem
+                          child: Image.network(
+                            coverUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset('assets/images/No_Cover.jpg',
+                                  fit: BoxFit.cover);
+                            },
+                          ),
+                        ),
+                        title: Text(
+                          books[index].title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          books[index].authors.isNotEmpty
+                              ? books[index].authors[0]
+                              : 'No author available',
+                        ),
+                      ),
                     ),
                   );
                 } else {
-                  // Botão "Load More"
-                  return Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Center(
+                  // Exibir botão "Load More"
+                  return Center(
+                    child: TextButton(
+                      onPressed: isLoadingMore ? null : _loadMoreBooks,
                       child: isLoadingMore
                           ? const CircularProgressIndicator()
-                          : ElevatedButton(
-                              onPressed: _loadMoreBooks,
-                              child: const Text('Load More'),
-                            ),
+                          : const Text('Load More'),
                     ),
                   );
                 }

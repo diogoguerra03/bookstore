@@ -3,7 +3,7 @@ import '../services/book_service.dart';
 import '../models/book_model.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'genre_page.dart';
-import 'book_detail_page.dart';
+import 'book_detail_page.dart'; // Certifique-se de que este nome está correto
 import 'package:logger/logger.dart';
 import 'auth/profile_page.dart';
 import 'library_page.dart';
@@ -21,15 +21,15 @@ class HomePageState extends State<HomePage> {
   late Future<List<Book>> horrorBooks;
   late Future<List<Book>> mysteryBooks;
   late Future<List<Book>> searchResults;
-  bool isGenrePage = false; // Novo estado para controlar a navegação
-  bool isLoading = true; // Variável para controlar o loading
+  bool isGenrePage = false;
+  bool isLoading = true;
 
   final TextEditingController _searchController = TextEditingController();
   bool isSearching = false;
-  String _searchFilter = 'title';
+  String _searchFilter = 'intitle';
   int _searchPage = 1;
 
-  final List<String> _searchOptions = ['title', 'author', 'subject'];
+  final List<String> _searchOptions = ['intitle', 'inauthor', 'subject'];
 
   @override
   void initState() {
@@ -39,24 +39,18 @@ class HomePageState extends State<HomePage> {
 
   Future<void> _loadBooks() async {
     setState(() {
-      isLoading = true; // Inicia o estado de carregamento
+      isLoading = true;
     });
 
     try {
-      // Tente buscar os dados
-      adventureBooks =
-          BookService().fetchBooks('subject=adventure&limit=10', 1);
-      fantasyBooks = BookService().fetchBooks('subject=fantasy&limit=10', 1);
-      horrorBooks = BookService().fetchBooks('subject=horror&limit=10', 1);
-      mysteryBooks = BookService().fetchBooks('subject=mystery&limit=10', 1);
-
-      await Future.delayed(const Duration(seconds: 6)); // Simula um atraso
+      // Usar a Google Books API para buscar os dados
+      adventureBooks = BookService().fetchBooks('subject:adventure', 1);
+      fantasyBooks = BookService().fetchBooks('subject:fantasy', 1);
+      horrorBooks = BookService().fetchBooks('subject:horror', 1);
+      mysteryBooks = BookService().fetchBooks('subject:mystery', 1);
     } catch (e) {
-      // Em caso de erro, você pode mostrar uma mensagem ou log
       Logger().e('Error loading books: $e');
-      // Aqui, você pode definir um estado de erro se necessário
     } finally {
-      // Garanta que o estado de carregamento é desativado
       setState(() {
         isLoading = false;
       });
@@ -70,7 +64,7 @@ class HomePageState extends State<HomePage> {
         isSearching = true;
         _searchPage = 1;
         searchResults =
-            BookService().fetchBooks('$_searchFilter=$query', _searchPage);
+            BookService().fetchBooks('$_searchFilter:$query', _searchPage);
       });
     }
   }
@@ -79,7 +73,7 @@ class HomePageState extends State<HomePage> {
     setState(() {
       _searchPage++;
       searchResults = BookService().fetchBooks(
-          '$_searchFilter=${_searchController.text.trim()}', _searchPage);
+          '$_searchFilter:${_searchController.text.trim()}', _searchPage);
     });
   }
 
@@ -96,9 +90,7 @@ class HomePageState extends State<HomePage> {
       appBar: AppBar(
           title: const Text('BookStore'), automaticallyImplyLeading: false),
       body: isLoading
-          ? const Center(
-              child:
-                  CircularProgressIndicator()) // Mostra o loading enquanto carrega
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,7 +171,6 @@ class HomePageState extends State<HomePage> {
         currentIndex: 0,
         onTap: (index) {
           if (index == 1) {
-            // Navegação para a página Library
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -187,7 +178,6 @@ class HomePageState extends State<HomePage> {
               ),
             );
           } else if (index == 2) {
-            // Navegação para a página Profile
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -201,24 +191,16 @@ class HomePageState extends State<HomePage> {
   }
 
   Widget buildSearchBookItem(Book book) {
-    String coverUrl = book.coverId != 0
-        ? 'https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg'
-        : ''; //  Icon padrão em caso de erro
+    String coverUrl =
+        book.coverUrl.isNotEmpty ? book.coverUrl : 'assets/images/No_Cover.jpg';
 
     return GestureDetector(
       onTap: () {
-        // Navegação para a página de detalhes do livro
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => DetailPage(
-              title: book.title,
-              author: book.author,
-              coverId: book.coverId,
-              workId: book.workId,
-              wantToRead: book.wantToRead ?? 0,
-              readingCount: book.readingCount ?? 0,
-              readCount: book.readCount ?? 0,
+            builder: (context) => BookDetailPage(
+              book: book, // Passa o objeto do livro diretamente
             ),
           ),
         );
@@ -239,7 +221,6 @@ class HomePageState extends State<HomePage> {
                   fit: BoxFit.cover,
                   errorBuilder: (BuildContext context, Object error,
                       StackTrace? stackTrace) {
-                    // Retorna uma imagem padrão em caso de erro
                     return Image.asset('assets/images/No_Cover.jpg',
                         height: 80, width: 60);
                   },
@@ -259,9 +240,9 @@ class HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      book.author.isNotEmpty
-                          ? book.author
-                          : 'No author available',
+                      book.authors.isNotEmpty
+                          ? book.authors[0]
+                          : 'Unknown Author',
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -290,12 +271,10 @@ class HomePageState extends State<HomePage> {
             children: [
               ListView.builder(
                 shrinkWrap: true,
-                physics:
-                    const NeverScrollableScrollPhysics(), // Evitar scroll duplo
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: books.length,
                 itemBuilder: (context, index) {
-                  return buildSearchBookItem(
-                      books[index]); // Usar a nova função aqui
+                  return buildSearchBookItem(books[index]);
                 },
               ),
               TextButton(
@@ -311,7 +290,6 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  // Função para criar uma secção de livros de acordo com o género
   Widget buildBookSection(String genre, Future<List<Book>> booksFuture) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,7 +307,6 @@ class HomePageState extends State<HomePage> {
               IconButton(
                 icon: const Icon(Icons.arrow_forward),
                 onPressed: () {
-                  // Navega para a GenrePage ao clicar na seta
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -342,7 +319,7 @@ class HomePageState extends State<HomePage> {
           ),
         ),
         SizedBox(
-          height: 200, // Altura da área onde os livros vão aparecer
+          height: 200,
           child: FutureBuilder<List<Book>>(
             future: booksFuture,
             builder: (context, snapshot) {
@@ -370,26 +347,17 @@ class HomePageState extends State<HomePage> {
   }
 
   Widget buildBookItem(Book book) {
-    String coverUrl = book.coverId != 0
-        ? 'https://covers.openlibrary.org/b/id/${book.coverId}-L.jpg'
-        : 'assets/images/No_Cover.jpg';
+    String coverUrl =
+        book.coverUrl.isNotEmpty ? book.coverUrl : 'assets/images/No_Cover.jpg';
 
     return GestureDetector(
       onTap: () {
-        // Log o workId do livro
-        Logger().i('Clicked on book with workId: ${book.workId}');
-        // Navegação para a página de detalhes do livro
+        Logger().i('Clicked on book with ID: ${book.id}');
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => DetailPage(
-              title: book.title,
-              author: book.author,
-              coverId: book.coverId,
-              workId: book.workId,
-              wantToRead: book.wantToRead ?? 0,
-              readingCount: book.readingCount ?? 0,
-              readCount: book.readCount ?? 0,
+            builder: (context) => BookDetailPage(
+              book: book,
             ),
           ),
         );
@@ -420,7 +388,7 @@ class HomePageState extends State<HomePage> {
               overflow: TextOverflow.ellipsis,
             ),
             Text(
-              book.author.isNotEmpty ? book.author : 'No author available',
+              book.authors.isNotEmpty ? book.authors[0] : 'Unknown Author',
               style: const TextStyle(fontSize: 12),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

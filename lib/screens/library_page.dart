@@ -259,6 +259,7 @@ class LibraryPageState extends State<LibraryPage> {
 
         DatabaseReference ref = _database.ref('bookshelf/${user.uid}');
         DatabaseReference newPlaylistRef = ref.push(); // Gera um ID único
+        // ignore: unused_local_variable
         String playlistId = newPlaylistRef.key!;
 
         await newPlaylistRef.set({
