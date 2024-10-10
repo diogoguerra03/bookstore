@@ -202,9 +202,9 @@ class PlaylistDialogState extends State<PlaylistDialog> {
         Map<String, dynamic> playlists =
             Map<String, dynamic>.from(snapshot.value as Map);
 
-        playlists.forEach((key, value) async {
+        for (String key in playlists.keys) {
           _selectedPlaylists[key] = false;
-          _playlistNames[key] = value['name'] ?? 'Unnamed Playlist';
+          _playlistNames[key] = playlists[key]['name'] ?? 'Unnamed Playlist';
 
           // Verifica se o livro já está na playlist
           DataSnapshot booksSnapshot = await playlistRef
@@ -213,9 +213,11 @@ class PlaylistDialogState extends State<PlaylistDialog> {
               .child(widget.book.id) // Verifica se o bookId existe como chave
               .get();
 
-          _playlistDisabled[key] = booksSnapshot
-              .exists; // Desativa checkbox se já estiver na playlist
-        });
+          _playlistDisabled[key] = booksSnapshot.exists;
+
+          // Certifique-se de que o widget ainda está montado antes de chamar setState
+          if (!mounted) return;
+        }
       }
     } catch (e) {
       Logger().e("Error loading playlists: $e");
@@ -235,10 +237,10 @@ class PlaylistDialogState extends State<PlaylistDialog> {
 
       DatabaseReference userBookshelfRef =
           database.child('bookshelf').child(uid);
-      _selectedPlaylists.forEach((playlistId, isSelected) {
-        if (isSelected) {
-          // Usar o bookId como chave e salvar todas as informações do livro
-          userBookshelfRef
+
+      for (String playlistId in _selectedPlaylists.keys) {
+        if (_selectedPlaylists[playlistId] == true) {
+          await userBookshelfRef
               .child(playlistId)
               .child('books')
               .child(widget.book.id)
@@ -256,7 +258,10 @@ class PlaylistDialogState extends State<PlaylistDialog> {
             'coverUrl': widget.book.coverUrl,
           });
         }
-      });
+
+        // Certifique-se de que o widget ainda está montado antes de chamar setState
+        if (!mounted) return;
+      }
     } catch (e) {
       Logger().e("Error adding to playlists: $e");
     } finally {

@@ -300,6 +300,7 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
             const SizedBox(height: 20),
 
             // Lista de livros na playlist ou mensagem se não houver livros
+            // Widget para exibir a lista de livros com opacidade na capa e ícone de remoção
             Expanded(
               child: books.isEmpty
                   ? const Center(
@@ -316,11 +317,32 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
                       itemBuilder: (context, index) {
                         final book = books[index];
                         return ListTile(
-                          leading: IconButton(
-                            icon: const Icon(Icons.remove_circle_outline),
-                            color: Colors.red,
-                            onPressed: () =>
-                                _removeBook(book.id), // Remove o livro
+                          leading: Stack(
+                            alignment:
+                                Alignment.center, // Centraliza os elementos
+                            children: [
+                              // Capa do livro com opacidade
+                              Opacity(
+                                opacity: 0.8, // Define a opacidade da capa
+                                child: Image.network(
+                                  book.coverUrl,
+                                  width: 50,
+                                  height: 70,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              // Ícone de remoção sobreposto
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                  color: Colors.red,
+                                  onPressed: () =>
+                                      _removeBook(book.id), // Remove o livro
+                                ),
+                              ),
+                            ],
                           ),
                           title: Text(book.title),
                           subtitle: Text(book.authors.join(', ')),
