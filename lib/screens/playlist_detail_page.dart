@@ -260,14 +260,17 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
               ),
             ),
           ),
-          books.isEmpty
-              ? const SliverToBoxAdapter(
-                  child: Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
+          // Verificação para livros filtrados vazios
+          filteredBooks.isEmpty
+              ? SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
                       child: Text(
-                        'This playlist has no books.',
-                        style: TextStyle(
+                        searchTerm.isNotEmpty
+                            ? 'No books found for "$searchTerm".'
+                            : 'This playlist has no books.',
+                        style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
                         ),
