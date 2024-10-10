@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:logger/logger.dart';
 import '../models/book_model.dart';
 
 class BookDetailPage extends StatelessWidget {
@@ -13,7 +14,7 @@ class BookDetailPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return PlaylistDialog(bookId: book.id);
+        return PlaylistDialog(book: book); // Passa o objeto completo do livro
       },
     );
   }
@@ -74,7 +75,6 @@ class BookDetailPage extends StatelessWidget {
                                     ? book.authors.join(', ')
                                     : 'Unknown Author',
                                 style: const TextStyle(fontSize: 16),
-                                // Remover `overflow: TextOverflow.ellipsis` para permitir que o texto faça breakline
                               ),
                             ),
                           ],
@@ -166,11 +166,11 @@ class BookDetailPage extends StatelessWidget {
   }
 }
 
-// Dialog para selecionar playlists
+// Dialog para selecionar playlists e salvar todas as informações do livro
 class PlaylistDialog extends StatefulWidget {
-  final String bookId;
+  final Book book;
 
-  const PlaylistDialog({super.key, required this.bookId});
+  const PlaylistDialog({super.key, required this.book});
 
   @override
   PlaylistDialogState createState() => PlaylistDialogState();
@@ -180,6 +180,8 @@ class PlaylistDialogState extends State<PlaylistDialog> {
   final DatabaseReference database = FirebaseDatabase.instance.ref();
   final Map<String, bool> _selectedPlaylists = {};
   final Map<String, String> _playlistNames = {};
+  final Map<String, bool> _playlistDisabled =
+      {}; // Para desativar as checkboxes
   bool _isLoading = true;
 
   @override
@@ -190,8 +192,8 @@ class PlaylistDialogState extends State<PlaylistDialog> {
 
   Future<void> _loadPlaylists() async {
     try {
-      final FirebaseAuth _auth = FirebaseAuth.instance;
-      String uid = _auth.currentUser!.uid;
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      String uid = auth.currentUser!.uid;
 
       DatabaseReference playlistRef = database.child('bookshelf').child(uid);
       DataSnapshot snapshot = await playlistRef.get();
@@ -200,14 +202,23 @@ class PlaylistDialogState extends State<PlaylistDialog> {
         Map<String, dynamic> playlists =
             Map<String, dynamic>.from(snapshot.value as Map);
 
-        playlists.forEach((key, value) {
+        playlists.forEach((key, value) async {
           _selectedPlaylists[key] = false;
           _playlistNames[key] = value['name'] ?? 'Unnamed Playlist';
+
+          // Verifica se o livro já está na playlist
+          DataSnapshot booksSnapshot = await playlistRef
+              .child(key)
+              .child('books')
+              .child(widget.book.id) // Verifica se o bookId existe como chave
+              .get();
+
+          _playlistDisabled[key] = booksSnapshot
+              .exists; // Desativa checkbox se já estiver na playlist
         });
       }
     } catch (e) {
-      // Handle error properly, maybe log or show a snackbar
-      print("Error loading playlists: $e");
+      Logger().e("Error loading playlists: $e");
     } finally {
       if (mounted) {
         setState(() {
@@ -218,20 +229,41 @@ class PlaylistDialogState extends State<PlaylistDialog> {
   }
 
   Future<void> _addToPlaylists() async {
-    final FirebaseAuth _auth = FirebaseAuth.instance;
-    String uid = _auth.currentUser!.uid;
+    try {
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      String uid = auth.currentUser!.uid;
 
-    DatabaseReference userBookshelfRef = database.child('bookshelf').child(uid);
-    _selectedPlaylists.forEach((playlistId, isSelected) {
-      if (isSelected) {
-        userBookshelfRef
-            .child(playlistId)
-            .child('books')
-            .push()
-            .set({'bookId': widget.bookId});
+      DatabaseReference userBookshelfRef =
+          database.child('bookshelf').child(uid);
+      _selectedPlaylists.forEach((playlistId, isSelected) {
+        if (isSelected) {
+          // Usar o bookId como chave e salvar todas as informações do livro
+          userBookshelfRef
+              .child(playlistId)
+              .child('books')
+              .child(widget.book.id)
+              .set({
+            'bookId': widget.book.id,
+            'title': widget.book.title,
+            'authors': widget.book.authors,
+            'publisher': widget.book.publisher,
+            'categories': widget.book.categories,
+            'pageCount': widget.book.pageCount,
+            'publishedDate': widget.book.publishedDate,
+            'averageRating': widget.book.averageRating,
+            'ratingsCount': widget.book.ratingsCount,
+            'description': widget.book.description,
+            'coverUrl': widget.book.coverUrl,
+          });
+        }
+      });
+    } catch (e) {
+      Logger().e("Error adding to playlists: $e");
+    } finally {
+      if (mounted) {
+        Navigator.pop(context);
       }
-    });
-    Navigator.pop(context);
+    }
   }
 
   @override
@@ -247,11 +279,13 @@ class PlaylistDialogState extends State<PlaylistDialog> {
                   return CheckboxListTile(
                     title: Text(_playlistNames[playlistId] ?? playlistId),
                     value: _selectedPlaylists[playlistId],
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _selectedPlaylists[playlistId] = value!;
-                      });
-                    },
+                    onChanged: _playlistDisabled[playlistId] == true
+                        ? null
+                        : (bool? value) {
+                            setState(() {
+                              _selectedPlaylists[playlistId] = value!;
+                            });
+                          },
                   );
                 }).toList(),
               ),
