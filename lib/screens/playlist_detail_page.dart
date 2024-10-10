@@ -152,7 +152,7 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
             flexibleSpace: FlexibleSpaceBar(
               background: Column(
                 children: [
-                  const SizedBox(height: 85),
+                  const SizedBox(height: 100),
                   // Imagem da playlist
                   playlistImageUrl != null
                       ? Image.network(
