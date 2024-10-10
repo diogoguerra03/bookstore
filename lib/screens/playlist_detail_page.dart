@@ -260,32 +260,48 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
               ),
             ),
           ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final book = filteredBooks[index];
-                return ListTile(
-                  leading: book.coverUrl.isNotEmpty
-                      ? Image.network(book.coverUrl,
-                          width: 50, height: 50, fit: BoxFit.contain)
-                      : const Icon(Icons.book, size: 50, color: Colors.blue),
-                  title: Text(book.title),
-                  subtitle: Text(book.authors.isNotEmpty
-                      ? book.authors.join(', ')
-                      : 'Unknown Author'),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BookDetailPage(book: book),
+          books.isEmpty
+              ? const SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'This playlist has no books.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
                       ),
-                    );
-                  },
-                );
-              },
-              childCount: filteredBooks.length,
-            ),
-          ),
+                    ),
+                  ),
+                )
+              : SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final book = filteredBooks[index];
+                      return ListTile(
+                        leading: book.coverUrl.isNotEmpty
+                            ? Image.network(book.coverUrl,
+                                width: 50, height: 50, fit: BoxFit.contain)
+                            : const Icon(Icons.book,
+                                size: 50, color: Colors.blue),
+                        title: Text(book.title),
+                        subtitle: Text(book.authors.isNotEmpty
+                            ? book.authors.join(', ')
+                            : 'Unknown Author'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BookDetailPage(book: book),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    childCount: filteredBooks.length,
+                  ),
+                ),
         ],
       ),
     );

@@ -299,23 +299,34 @@ class EditPlaylistPageState extends State<EditPlaylistPage> {
             ),
             const SizedBox(height: 20),
 
-            // Lista de livros na playlist
+            // Lista de livros na playlist ou mensagem se não houver livros
             Expanded(
-              child: ListView.builder(
-                itemCount: books.length,
-                itemBuilder: (context, index) {
-                  final book = books[index];
-                  return ListTile(
-                    leading: IconButton(
-                      icon: const Icon(Icons.remove_circle_outline),
-                      color: Colors.red,
-                      onPressed: () => _removeBook(book.id), // Remove o livro
+              child: books.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'This playlist has no books.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: books.length,
+                      itemBuilder: (context, index) {
+                        final book = books[index];
+                        return ListTile(
+                          leading: IconButton(
+                            icon: const Icon(Icons.remove_circle_outline),
+                            color: Colors.red,
+                            onPressed: () =>
+                                _removeBook(book.id), // Remove o livro
+                          ),
+                          title: Text(book.title),
+                          subtitle: Text(book.authors.join(', ')),
+                        );
+                      },
                     ),
-                    title: Text(book.title),
-                    subtitle: Text(book.authors.join(', ')),
-                  );
-                },
-              ),
             ),
           ],
         ),
