@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'edit_playlist_page.dart';
+import 'book_detail_page.dart'; // Importe a página de detalhes do livro
+import '../models/book_model.dart'; // Importe o modelo de livro
 
 class PlaylistDetailPage extends StatefulWidget {
   final String playlistId; // Agora recebemos o ID da playlist
@@ -22,7 +24,7 @@ class PlaylistDetailPage extends StatefulWidget {
 class PlaylistDetailPageState extends State<PlaylistDetailPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseDatabase _database = FirebaseDatabase.instance;
-  List<Map<String, String>> books = []; // Lista de livros da playlist
+  List<Book> books = []; // Lista de objetos do tipo Book
   late DatabaseReference playlistRef; // Referência da playlist
   String? playlistImageUrl;
   String playlistName = ''; // Para manter o nome atualizado
@@ -68,12 +70,25 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
             Map<dynamic, dynamic> bookValues =
                 values['books'] as Map<dynamic, dynamic>;
             setState(() {
-              books = bookValues.entries
-                  .map((entry) => {
-                        'title': entry.key.toString(),
-                        'author': entry.value.toString()
-                      })
-                  .toList();
+              books = bookValues.entries.map((entry) {
+                Map<dynamic, dynamic> bookData =
+                    entry.value as Map<dynamic, dynamic>;
+                return Book(
+                  id: entry.key, // bookId como chave
+                  title: bookData['title'] ?? 'Unknown Title',
+                  authors: List<String>.from(
+                      bookData['authors'] ?? ['Unknown Author']),
+                  publisher: bookData['publisher'] ?? 'Unknown Publisher',
+                  categories: List<String>.from(
+                      bookData['categories'] ?? ['Unknown Category']),
+                  pageCount: bookData['pageCount'] ?? 0,
+                  publishedDate: bookData['publishedDate'] ?? '',
+                  averageRating: (bookData['averageRating'] ?? 0).toDouble(),
+                  ratingsCount: bookData['ratingsCount'] ?? 0,
+                  description: bookData['description'] ?? '',
+                  coverUrl: bookData['coverUrl'] ?? '',
+                );
+              }).toList();
             });
           } else {
             setState(() {
@@ -136,7 +151,7 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
             Text('${books.length} books',
                 style: const TextStyle(color: Colors.grey)),
 
-            // Barra de pesquisa
+            // Barra de pesquisa (opcional, ainda não implementada a função de filtro)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: TextField(
@@ -159,10 +174,23 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
                 itemBuilder: (context, index) {
                   final book = books[index];
                   return ListTile(
-                    leading:
-                        const Icon(Icons.book, size: 50, color: Colors.blue),
-                    title: Text(book['title'] ?? 'Unknown Title'),
-                    subtitle: Text(book['author'] ?? 'Unknown Author'),
+                    leading: book.coverUrl.isNotEmpty
+                        ? Image.network(book.coverUrl,
+                            width: 50, height: 50, fit: BoxFit.cover)
+                        : const Icon(Icons.book, size: 50, color: Colors.blue),
+                    title: Text(book.title),
+                    subtitle: Text(book.authors.isNotEmpty
+                        ? book.authors.join(', ')
+                        : 'Unknown Author'),
+                    onTap: () {
+                      // Abre a página de detalhes do livro
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookDetailPage(book: book),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
