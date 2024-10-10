@@ -7,7 +7,7 @@ import 'book_detail_page.dart'; // Importe a página de detalhes do livro
 import '../models/book_model.dart'; // Importe o modelo de livro
 
 class PlaylistDetailPage extends StatefulWidget {
-  final String playlistId; // Agora recebemos o ID da playlist
+  final String playlistId;
   final String playlistName;
   final String? imageUrl;
 
@@ -143,137 +143,144 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title:
-            Text(playlistName.isNotEmpty ? playlistName : widget.playlistName),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              // Função para editar playlist
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditPlaylistPage(
-                    playlistId: widget.playlistId, // Agora passamos o ID
-                    playlistName: playlistName.isNotEmpty
-                        ? playlistName
-                        : widget.playlistName,
-                    imageUrl: playlistImageUrl ?? widget.imageUrl,
-                  ),
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification scrollInfo) {
+          return false;
+        },
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight:
+                  300.0, // Mantém o tamanho da imagem e da área superior
+              pinned: true,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Column(
+                  children: [
+                    const SizedBox(height: 85),
+                    // Imagem da playlist
+                    playlistImageUrl != null
+                        ? Image.network(
+                            playlistImageUrl!,
+                            height: 150, // Mantém a altura da imagem
+                            width: 150,
+                            fit: BoxFit.cover,
+                          )
+                        : const Icon(Icons.book, size: 100, color: Colors.blue),
+                    const SizedBox(height: 16),
+                    // Nome da playlist
+                    Text(
+                        playlistName.isNotEmpty
+                            ? playlistName
+                            : widget.playlistName,
+                        style: const TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text('${filteredBooks.length} books',
+                        style: const TextStyle(color: Colors.grey)),
+                  ],
                 ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Imagem e informações da playlist
-            playlistImageUrl != null
-                ? Image.network(playlistImageUrl!,
-                    height: 150, width: 150, fit: BoxFit.cover)
-                : const Icon(Icons.book, size: 100, color: Colors.blue),
-            const SizedBox(height: 16),
-            Text(playlistName.isNotEmpty ? playlistName : widget.playlistName,
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('${filteredBooks.length} books',
-                style: const TextStyle(color: Colors.grey)),
-
-            // Dropdown para escolher entre título ou autor
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Filter by: "),
-                  DropdownButton<String>(
-                    value: filterBy,
-                    items: const [
-                      DropdownMenuItem(value: 'title', child: Text('Title')),
-                      DropdownMenuItem(value: 'author', child: Text('Author')),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        filterBy = value!;
-                        _filterBooks(); // Atualiza o filtro ao mudar o critério
-                      });
-                    },
-                  ),
-                ],
               ),
-            ),
-
-            // Barra de pesquisa
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: TextField(
-                controller: TextEditingController(text: searchTerm),
-                decoration: InputDecoration(
-                  hintText: 'Filter by $filterBy...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  // Lupa à esquerda
-                  prefixIcon: const Icon(Icons.search),
-                  // "X" à direita
-                  suffixIcon: searchTerm.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() {
-                              searchTerm = '';
-                              _filterBooks(); // Limpa a pesquisa e atualiza a lista
-                            });
-                          },
-                        )
-                      : null, // Não mostra o "X" se o campo estiver vazio
-                ),
-                onChanged: _onSearchChanged,
-              ),
-            ),
-
-            // Verifica se há livros na playlist
-            if (books.isEmpty)
-              const Center(child: Text("No books available in this playlist")),
-            // Verifica se o filtro resultou em livros
-            if (filteredBooks.isEmpty && books.isNotEmpty)
-              const Center(child: Text("No books found matching your search")),
-
-            // Lista de livros
-            if (filteredBooks.isNotEmpty)
-              Expanded(
-                child: ListView.builder(
-                  itemCount: filteredBooks.length,
-                  itemBuilder: (context, index) {
-                    final book = filteredBooks[index];
-                    return ListTile(
-                      leading: book.coverUrl.isNotEmpty
-                          ? Image.network(book.coverUrl,
-                              width: 50, height: 50, fit: BoxFit.contain)
-                          : const Icon(Icons.book,
-                              size: 50, color: Colors.blue),
-                      title: Text(book.title),
-                      subtitle: Text(book.authors.isNotEmpty
-                          ? book.authors.join(', ')
-                          : 'Unknown Author'),
-                      onTap: () {
-                        // Abre a página de detalhes do livro
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => BookDetailPage(book: book),
-                          ),
-                        );
-                      },
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditPlaylistPage(
+                          playlistId: widget.playlistId,
+                          playlistName: playlistName.isNotEmpty
+                              ? playlistName
+                              : widget.playlistName,
+                          imageUrl: playlistImageUrl ?? widget.imageUrl,
+                        ),
+                      ),
                     );
                   },
                 ),
+              ],
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    // Dropdown para escolher entre título ou autor
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Filter by: "),
+                        DropdownButton<String>(
+                          value: filterBy,
+                          items: const [
+                            DropdownMenuItem(
+                                value: 'title', child: Text('Title')),
+                            DropdownMenuItem(
+                                value: 'author', child: Text('Author')),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              filterBy = value!;
+                              _filterBooks();
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Barra de pesquisa
+                    TextField(
+                      controller: TextEditingController(text: searchTerm),
+                      decoration: InputDecoration(
+                        hintText: 'Filter by $filterBy...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: searchTerm.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  setState(() {
+                                    searchTerm = '';
+                                    _filterBooks();
+                                  });
+                                },
+                              )
+                            : null,
+                      ),
+                      onChanged: _onSearchChanged,
+                    ),
+                  ],
+                ),
               ),
+            ),
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final book = filteredBooks[index];
+                  return ListTile(
+                    leading: book.coverUrl.isNotEmpty
+                        ? Image.network(book.coverUrl,
+                            width: 50, height: 50, fit: BoxFit.contain)
+                        : const Icon(Icons.book, size: 50, color: Colors.blue),
+                    title: Text(book.title),
+                    subtitle: Text(book.authors.isNotEmpty
+                        ? book.authors.join(', ')
+                        : 'Unknown Author'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookDetailPage(book: book),
+                        ),
+                      );
+                    },
+                  );
+                },
+                childCount: filteredBooks.length,
+              ),
+            ),
           ],
         ),
       ),
