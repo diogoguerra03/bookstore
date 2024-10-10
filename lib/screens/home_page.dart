@@ -34,12 +34,12 @@ class HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadBooks();
+    _loadBooks(); // Inicia o carregamento dos livros
   }
 
   Future<void> _loadBooks() async {
     setState(() {
-      isLoading = true;
+      isLoading = true; // Exibe o indicador de progresso
     });
 
     try {
@@ -48,11 +48,14 @@ class HomePageState extends State<HomePage> {
       fantasyBooks = BookService().fetchBooks('subject:fantasy', 1);
       horrorBooks = BookService().fetchBooks('subject:horror', 1);
       mysteryBooks = BookService().fetchBooks('subject:mystery', 1);
+
+      // Simula um atraso de 1 segundo antes de carregar os livros
+      await Future.delayed(const Duration(seconds: 1));
     } catch (e) {
       Logger().e('Error loading books: $e');
     } finally {
       setState(() {
-        isLoading = false;
+        isLoading = false; // Oculta o indicador de progresso
       });
     }
   }
@@ -90,7 +93,7 @@ class HomePageState extends State<HomePage> {
       appBar: AppBar(
           title: const Text('BookStore'), automaticallyImplyLeading: false),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator()) // Exibe o loading
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
