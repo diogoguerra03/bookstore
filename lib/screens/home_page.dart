@@ -115,22 +115,22 @@ class HomePageState extends State<HomePage> {
                                 vertical: 15,
                                 horizontal: 20,
                               ),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: _clearSearch,
+                                    )
+                                  : null,
                             ),
                             onChanged: (value) {
-                              if (value.isEmpty) {
-                                _clearSearch();
-                              }
+                              setState(() {});
                             },
                           ),
                         ),
                         IconButton(
-                          icon: Icon(isSearching ? Icons.clear : Icons.search),
+                          icon: const Icon(Icons.search),
                           onPressed: () {
-                            if (isSearching) {
-                              _clearSearch();
-                            } else {
-                              _searchBooks();
-                            }
+                            _searchBooks(); // Mantém a funcionalidade de pesquisar
                           },
                         ),
                       ],
