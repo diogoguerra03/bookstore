@@ -68,11 +68,14 @@ class BookDetailPage extends StatelessWidget {
                           children: [
                             const Icon(Icons.person, size: 20),
                             const SizedBox(width: 8),
-                            Text(
-                              book.authors.isNotEmpty
-                                  ? book.authors.join(', ')
-                                  : 'Unknown Author',
-                              style: const TextStyle(fontSize: 16),
+                            Flexible(
+                              child: Text(
+                                book.authors.isNotEmpty
+                                    ? book.authors.join(', ')
+                                    : 'Unknown Author',
+                                style: const TextStyle(fontSize: 16),
+                                // Remover `overflow: TextOverflow.ellipsis` para permitir que o texto faça breakline
+                              ),
                             ),
                           ],
                         ),
