@@ -9,8 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  logger: ^1.0.0 # Para logs
-  http: ^0.13.4 # Para requisições HTTP
+  logger: ^2.4.0 # Para logs
+  http: ^1.2.2 # Para requisições HTTP
   encrypt: ^5.0.0 # Para criptografia
   sqflite: ^2.0.0+4 # Para usar o SQLite
   path: ^1.8.0 # Para trabalhar com caminhos
@@ -30,7 +30,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true

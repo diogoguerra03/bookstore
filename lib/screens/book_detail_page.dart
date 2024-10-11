@@ -336,6 +336,8 @@ class PlaylistDialogState extends State<PlaylistDialog> {
       DatabaseReference userBookshelfRef =
           database.child('bookshelf').child(uid);
 
+      DateTime now = DateTime.now();
+
       for (String playlistId in _selectedPlaylists.keys) {
         if (_selectedPlaylists[playlistId] == true) {
           await userBookshelfRef
@@ -358,6 +360,7 @@ class PlaylistDialogState extends State<PlaylistDialog> {
             'amount': widget.book.amount,
             'currencyCode': widget.book.currencyCode,
             'saleInfoUrl': widget.book.saleInfoUrl,
+            'addedAt': now.toIso8601String(),
           });
         }
 

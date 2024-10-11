@@ -1,3 +1,5 @@
+import 'package:bookstore/models/book_model.dart';
+import 'package:bookstore/screens/book_detail_page.dart';
 import 'package:bookstore/screens/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
@@ -140,6 +142,40 @@ class ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<List<Map<String, dynamic>>> _loadRecentActivity() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final DatabaseReference ref =
+        FirebaseDatabase.instance.ref('bookshelf/$uid');
+    final DataSnapshot snapshot = await ref.get();
+
+    List<Map<String, dynamic>> recentActivity = [];
+    if (snapshot.exists) {
+      Map<dynamic, dynamic> playlists = snapshot.value as Map<dynamic, dynamic>;
+
+      playlists.forEach((playlistId, playlistData) {
+        if (playlistData.containsKey('books')) {
+          Map<dynamic, dynamic> books =
+              playlistData['books'] as Map<dynamic, dynamic>;
+          books.forEach((bookId, bookData) {
+            if (bookData.containsKey('addedAt')) {
+              recentActivity.add({
+                'playlistId': playlistId,
+                'playlistName': playlistData['name'],
+                'book': bookData,
+                'addedAt': DateTime.parse(bookData['addedAt']),
+              });
+            }
+          });
+        }
+      });
+
+      // Ordena os livros pela data de adição (mais recente primeiro)
+      recentActivity.sort((a, b) => b['addedAt'].compareTo(a['addedAt']));
+    }
+
+    return recentActivity.take(5).toList(); // Limita a 5 itens
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,53 +189,52 @@ class ProfilePageState extends State<ProfilePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const EditProfilePage()),
+                  builder: (context) => const EditProfilePage(),
+                ),
               );
             },
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed:
-                _showLogoutConfirmationDialog, // Muda para o pop-up de confirmação
+            onPressed: _showLogoutConfirmationDialog,
           ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            CircleAvatar(
-              radius: 75,
-              backgroundImage: avatarUrl.isNotEmpty
-                  ? NetworkImage(avatarUrl) // Exibe a imagem do avatar
-                  : null, // Avatar padrão
-              child: avatarUrl.isEmpty
-                  ? const Icon(Icons.person, size: 50) // Ícone padrão
-                  : null,
-            ),
-            const SizedBox(height: 20),
-            Text(username,
-                style:
-                    const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(email,
-                style: const TextStyle(fontSize: 16, color: Colors.grey)),
-            const SizedBox(height: 20),
-            const Divider(
-              color: Colors.grey,
-              height: 2,
-            ),
-            const SizedBox(height: 20),
-            _buildStatistics(), // Chama a função que exibe as estatísticas
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              // Avatar e informações do usuário
+              CircleAvatar(
+                radius: 75,
+                backgroundImage:
+                    avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                child: avatarUrl.isEmpty
+                    ? const Icon(Icons.person, size: 50)
+                    : null,
+              ),
+              const SizedBox(height: 20),
+              Text(username,
+                  style: const TextStyle(
+                      fontSize: 28, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(email,
+                  style: const TextStyle(fontSize: 16, color: Colors.grey)),
+              const SizedBox(height: 20),
+              const Divider(color: Colors.grey, height: 2),
+              const SizedBox(height: 20),
+              _buildStatistics(), // Estatísticas de playlists e livros
+              const SizedBox(height: 20),
+              _buildRecentActivity(), // Adiciona a secção de atividade recente
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: 2,
         onTap: (index) {
           if (index == 0) {
-            // Navegação para a página Home
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -207,7 +242,6 @@ class ProfilePageState extends State<ProfilePage> {
               ),
             );
           } else if (index == 1) {
-            // Navegação para a página Library
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -217,6 +251,84 @@ class ProfilePageState extends State<ProfilePage> {
           }
         },
       ),
+    );
+  }
+
+  Widget _buildRecentActivity() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _loadRecentActivity(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Text("No recent activity.");
+        }
+
+        final recentBooks = snapshot.data!;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Recent Activity',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ListView.builder(
+              shrinkWrap: true,
+              itemCount: recentBooks.length,
+              itemBuilder: (context, index) {
+                final activity = recentBooks[index];
+                final bookData = activity['book'];
+
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: ListTile(
+                    leading: bookData['coverUrl'] != null
+                        ? Image.network(bookData['coverUrl'],
+                            width: 50, height: 50)
+                        : const Icon(Icons.book),
+                    title: Text(bookData['title']),
+                    subtitle: Text(
+                        'Added to ${activity['playlistName']} on ${activity['addedAt']}'),
+                    onTap: () {
+                      // Cria o objeto Book manualmente com os dados já existentes
+                      final book = Book(
+                        id: bookData['bookId'] ?? '',
+                        title: bookData['title'] ?? 'Unknown Title',
+                        authors: List<String>.from(
+                            bookData['authors'] ?? ['Unknown Author']),
+                        publisher: bookData['publisher'] ?? 'Unknown Publisher',
+                        publishedDate:
+                            bookData['publishedDate'] ?? 'Unknown Date',
+                        description: bookData['description'] ??
+                            'No description available',
+                        pageCount: bookData['pageCount'] ?? 0,
+                        categories:
+                            List<String>.from(bookData['categories'] ?? []),
+                        averageRating:
+                            (bookData['averageRating'] ?? 0).toDouble(),
+                        ratingsCount: bookData['ratingsCount'] ?? 0,
+                        coverUrl: bookData['coverUrl'] ?? '',
+                        amount: bookData['amount'] ?? 'Free',
+                        currencyCode: bookData['currencyCode'] ?? 'EUR',
+                        saleability: bookData['saleability'] ?? 'NOT_FOR_SALE',
+                        saleInfoUrl: bookData['saleInfoUrl'] ?? '',
+                      );
+
+                      // Navega para a página de detalhes do livro
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookDetailPage(book: book),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
