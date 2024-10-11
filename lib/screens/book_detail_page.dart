@@ -104,6 +104,8 @@ class BookDetailPage extends StatelessWidget {
                                           .showSnackBar(
                                         const SnackBar(
                                           content: Text('Book not for sale.'),
+                                          backgroundColor: Colors.red,
+                                          behavior: SnackBarBehavior.floating,
                                         ),
                                       );
                                     }
