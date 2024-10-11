@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:logger/logger.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/book_model.dart';
 
 class BookDetailPage extends StatelessWidget {
@@ -17,6 +18,16 @@ class BookDetailPage extends StatelessWidget {
         return PlaylistDialog(book: book); // Passa o objeto completo do livro
       },
     );
+  }
+
+  // Função para abrir a URL
+  Future<void> _launchURL(String url) async {
+    Uri uri = Uri.parse(url); // Converte a string em Uri
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 
   @override
@@ -39,120 +50,195 @@ class BookDetailPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 120,
-                    height: 180,
-                    child: Image.network(
-                      book.coverUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Image.asset('assets/images/No_Cover.jpg',
-                            fit: BoxFit.cover);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          book.title,
-                          style: const TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.person, size: 20),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                book.authors.isNotEmpty
-                                    ? book.authors.join(', ')
-                                    : 'Unknown Author',
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.business, size: 20),
-                            const SizedBox(width: 8),
-                            Text('Publisher: ${book.publisher}'),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.category, size: 20),
-                            const SizedBox(width: 8),
-                            Text('Categories: ${book.categories.join(', ')}'),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.attach_money, size: 20),
-                            const SizedBox(width: 8),
-                            Text('Price: ${book.amount} ${book.currencyCode}'),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 40),
-              Center(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
+              // Card com os principais detalhes do livro
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 5,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      buildStatItem(
-                        icon: Icons.menu_book,
-                        label: 'Pages',
-                        value: book.pageCount.toString(),
+                      // Capa do livro
+                      SizedBox(
+                        width: 120,
+                        height: 180,
+                        child: Image.network(
+                          book.coverUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset('assets/images/No_Cover.jpg',
+                                fit: BoxFit.cover);
+                          },
+                        ),
                       ),
-                      const SizedBox(width: 32),
-                      buildStatItem(
-                        icon: Icons.calendar_today,
-                        label: 'Published',
-                        value: book.publishedDate,
-                      ),
-                      const SizedBox(width: 32),
-                      buildStatItem(
-                        icon: Icons.star,
-                        label: 'Rating',
-                        value: book.averageRating.toString() == '0.0'
-                            ? 'N/A'
-                            : book.averageRating.toString(),
-                      ),
-                      const SizedBox(width: 32),
-                      buildStatItem(
-                        icon: Icons.rate_review,
-                        label: 'Reviews',
-                        value: book.ratingsCount.toString(),
+                      const SizedBox(width: 16),
+                      // Informações do livro
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    book.title,
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                // Ícone de informação para redirecionamento
+                                IconButton(
+                                  icon: const Icon(Icons.info_outline),
+                                  onPressed: () {
+                                    if (book.saleability != 'NOT_FOR_SALE') {
+                                      _launchURL(book
+                                          .saleInfoUrl); // Abre o link de venda
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Book not for sale.'),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.person, size: 20),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    book.authors.isNotEmpty
+                                        ? book.authors.join(', ')
+                                        : 'Unknown Author',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.business, size: 20),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text('Publisher: ${book.publisher}'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.category, size: 20),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                      'Categories: ${book.categories.join(', ')}'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (book.saleability != 'NOT_FOR_SALE') ...[
+                              Row(
+                                children: [
+                                  const Icon(Icons.attach_money, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                      'Price: ${book.amount} ${book.currencyCode}'),
+                                ],
+                              ),
+                            ] else ...[
+                              const Text(
+                                'Price: Not for sale',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+
+              const SizedBox(height: 20),
+
+              // Estatísticas do livro (exibidas no centro)
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 5,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Center(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          buildStatItem(
+                            icon: Icons.menu_book,
+                            label: 'Pages',
+                            value: book.pageCount.toString(),
+                          ),
+                          const SizedBox(width: 32),
+                          buildStatItem(
+                            icon: Icons.calendar_today,
+                            label: 'Published',
+                            value: book.publishedDate,
+                          ),
+                          const SizedBox(width: 32),
+                          buildStatItem(
+                            icon: Icons.star,
+                            label: 'Rating',
+                            value: book.averageRating.toString() == '0.0'
+                                ? 'N/A'
+                                : book.averageRating.toString(),
+                          ),
+                          const SizedBox(width: 32),
+                          buildStatItem(
+                            icon: Icons.rate_review,
+                            label: 'Reviews',
+                            value: book.ratingsCount.toString(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Descrição do livro
               const Text(
                 'Description:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Text(
-                book.description,
-                style: const TextStyle(fontSize: 16),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[200],
+                ),
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  book.description,
+                  style: const TextStyle(fontSize: 16),
+                ),
               ),
             ],
           ),
