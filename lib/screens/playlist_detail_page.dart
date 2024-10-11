@@ -92,6 +92,10 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
                   ratingsCount: bookData['ratingsCount'] ?? 0,
                   description: bookData['description'] ?? '',
                   coverUrl: bookData['coverUrl'] ?? '',
+                  amount: bookData['amount'] ?? 'Free',
+                  currencyCode: bookData['currencyCode'] ?? 'EUR',
+                  saleability: bookData['saleability'] ?? 'NOT_FOR_SALE',
+                  saleInfoUrl: bookData['saleInfoUrl'] ?? '',
                 );
               }).toList();
               _filterBooks(); // Aplica o filtro aos livros

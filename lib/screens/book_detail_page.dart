@@ -354,6 +354,10 @@ class PlaylistDialogState extends State<PlaylistDialog> {
             'ratingsCount': widget.book.ratingsCount,
             'description': widget.book.description,
             'coverUrl': widget.book.coverUrl,
+            'saleability': widget.book.saleability,
+            'amount': widget.book.amount,
+            'currencyCode': widget.book.currencyCode,
+            'saleInfoUrl': widget.book.saleInfoUrl,
           });
         }
 
