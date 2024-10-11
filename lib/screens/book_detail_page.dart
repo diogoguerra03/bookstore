@@ -264,6 +264,16 @@ class PlaylistDialogState extends State<PlaylistDialog> {
         // Certifique-se de que o widget ainda está montado antes de chamar setState
         if (!mounted) return;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+              'Book added to playlists',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating),
+      );
     } catch (e) {
       Logger().e("Error adding to playlists: $e");
     } finally {
