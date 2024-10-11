@@ -226,7 +226,7 @@ class ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 20),
               _buildStatistics(), // Estatísticas de playlists e livros
               const SizedBox(height: 20),
-              _buildRecentActivity(), // Adiciona a secção de atividade recente
+              _buildRecentActivity(), // Secção de atividade recente
             ],
           ),
         ),
@@ -267,13 +267,21 @@ class ProfilePageState extends State<ProfilePage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Recent Activity',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              children: const [
+                Icon(Icons.history, size: 24), // Ícone de Recent Activity
+                SizedBox(width: 8),
+                Text(
+                  'Recent Activity',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             ListView.builder(
               shrinkWrap: true,
+              physics:
+                  const NeverScrollableScrollPhysics(), // Desativa o scroll próprio
               itemCount: recentBooks.length,
               itemBuilder: (context, index) {
                 final activity = recentBooks[index];
