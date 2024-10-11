@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import '../services/book_service.dart';
 import '../models/book_model.dart';
 import 'book_detail_page.dart'; // Certifique-se de importar a página de detalhes
@@ -30,20 +31,41 @@ class GenrePageState extends State<GenrePage> {
       isLoadingMore = true;
     });
 
-    BookService()
-        .fetchBooks('subject:${widget.genre}', currentPage)
-        .then((newBooks) {
-      setState(() {
-        books.addAll(newBooks);
-        isLoadingMore = false;
-        currentPage++; // Incrementa a página para a próxima chamada
+    if (widget.genre != 'Newest' && widget.genre != 'Relevance') {
+      Logger().i('Loading more books for genre: ${widget.genre}');
+      // Carrega livros por gênero
+      BookService()
+          .fetchBooks('subject:${widget.genre}', currentPage)
+          .then((newBooks) {
+        setState(() {
+          books.addAll(newBooks);
+          isLoadingMore = false;
+          currentPage++; // Incrementa a página para a próxima chamada
+        });
+      }).catchError((error) {
+        setState(() {
+          isLoadingMore = false;
+        });
+        // Tratar erros, mostrar mensagem de erro se necessário
       });
-    }).catchError((error) {
-      setState(() {
-        isLoadingMore = false;
+    } else {
+      Logger().i('TESTE');
+      // Carrega livros para Newest ou Relevance
+      BookService()
+          .fetchBooks('orderBy:${widget.genre}', currentPage)
+          .then((newBooks) {
+        setState(() {
+          books.addAll(newBooks);
+          isLoadingMore = false;
+          currentPage++; // Incrementa a página para a próxima chamada
+        });
+      }).catchError((error) {
+        setState(() {
+          isLoadingMore = false;
+        });
+        // Tratar erros, mostrar mensagem de erro se necessário
       });
-      // Tratar erros, mostrar mensagem de erro se necessário
-    });
+    }
   }
 
   @override

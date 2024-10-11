@@ -16,10 +16,8 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
-  late Future<List<Book>> adventureBooks;
-  late Future<List<Book>> fantasyBooks;
-  late Future<List<Book>> horrorBooks;
-  late Future<List<Book>> mysteryBooks;
+  late Future<List<Book>> newestBooks;
+  late Future<List<Book>> relevanceBooks;
   late Future<List<Book>> searchResults;
   bool isGenrePage = false;
   bool isLoading = true;
@@ -30,6 +28,28 @@ class HomePageState extends State<HomePage> {
   int _searchPage = 1;
 
   final List<String> _searchOptions = ['intitle', 'inauthor', 'subject'];
+
+  final List<String> categoriesName = [
+    "Fiction",
+    "Classic",
+    "Romance",
+    "Mystery",
+    "Fantasy",
+    "History",
+    "Comic",
+    "Crime",
+  ];
+
+  final List<String> categoriesImage = [
+    "https://images.unsplash.com/photo-1474932430478-367dbb6832c1?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8ZmljdGlvbnxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=500&q=60",
+    "https://images.unsplash.com/photo-1455885661740-29cbf08a42fa?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8Y2xhc3NpYyUyMGJvb2tzfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60",
+    "https://images.unsplash.com/photo-1474552226712-ac0f0961a954?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8cm9tYW5jZSUyMGJvb2tzfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60",
+    "https://images.unsplash.com/photo-1587876931567-564ce588bfbd?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MjB8fG15c3RlcnklMjBib29rc3xlbnwwfHwwfHw%3D&auto=format&fit=crop&w=500&q=60",
+    "https://images.unsplash.com/photo-1439902315629-cd882022cea0?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8ZmFudGFzeSUyMGJvb2tzfGVufDB8MnwwfHw%3D&auto=format&fit=crop&w=500&q=60",
+    "https://images.unsplash.com/photo-1562673005-7693bd6d6e54?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8aGlzdG9yeXxlbnwwfDJ8MHx8&auto=format&fit=crop&w=500&q=60",
+    "https://images.unsplash.com/photo-1608889476561-6242cfdbf622?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8OXx8Y29taWN8ZW58MHwyfDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60",
+    "https://images.unsplash.com/photo-1625449281218-cbb6183f0aec?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8OHx8Y3JpbWV8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60",
+  ];
 
   @override
   void initState() {
@@ -44,10 +64,8 @@ class HomePageState extends State<HomePage> {
 
     try {
       // Usar a Google Books API para buscar os dados
-      adventureBooks = BookService().fetchBooks('subject:adventure', 1);
-      fantasyBooks = BookService().fetchBooks('subject:fantasy', 1);
-      horrorBooks = BookService().fetchBooks('subject:horror', 1);
-      mysteryBooks = BookService().fetchBooks('subject:mystery', 1);
+      newestBooks = BookService().fetchBooks('orderBy:newest', 1);
+      relevanceBooks = BookService().fetchBooks('orderBy:relevance', 1);
 
       // Simula um atraso de 1 segundo antes de carregar os livros
       await Future.delayed(const Duration(seconds: 1));
@@ -138,7 +156,7 @@ class HomePageState extends State<HomePage> {
                   ),
                   // Dropdown para selecionar tipo de pesquisa
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 15.0),
                     child: DropdownButton<String>(
                       value: _searchFilter,
                       items: _searchOptions.map((String option) {
@@ -161,12 +179,77 @@ class HomePageState extends State<HomePage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        buildBookSection('Adventure', adventureBooks),
-                        buildBookSection('Fantasy', fantasyBooks),
-                        buildBookSection('Horror', horrorBooks),
-                        buildBookSection('Mystery', mysteryBooks),
+                        buildBookSection('Newest', newestBooks),
+                        buildBookSection('Relevance', relevanceBooks),
                       ],
                     ),
+
+                  const SizedBox(height: 18),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Text(
+                      'Categories',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+                  // Imagens de categorias
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 4 / 2.5,
+                      ),
+                      itemCount: categoriesName.length,
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => GenrePage(
+                                  genre: categoriesName[index],
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              image: DecorationImage(
+                                image: NetworkImage(categoriesImage[index]),
+                                fit: BoxFit.cover,
+                                colorFilter: ColorFilter.mode(
+                                  Colors.black.withOpacity(0.3),
+                                  BlendMode.darken,
+                                ),
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                categoriesName[index],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
