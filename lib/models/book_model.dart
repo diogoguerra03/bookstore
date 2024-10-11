@@ -10,6 +10,8 @@ class Book {
   final double averageRating;
   final int ratingsCount;
   final String coverUrl; // Adicionado o campo coverUrl
+  final String amount;
+  final String currencyCode;
 
   Book({
     required this.id,
@@ -23,6 +25,8 @@ class Book {
     required this.averageRating,
     required this.ratingsCount,
     required this.coverUrl, // Inicialização do campo coverUrl
+    this.amount = '0.0',
+    this.currencyCode = 'EUR',
   });
 
   // Função para transformar o JSON da API num objeto Book
@@ -30,25 +34,31 @@ class Book {
     final volumeInfo = json['volumeInfo'];
 
     return Book(
-      id: json['id'] as String,
-      title: volumeInfo['title'] as String,
-      authors: volumeInfo['authors'] != null
-          ? List<String>.from(volumeInfo['authors'])
-          : ['No authors available'],
-      publisher: volumeInfo['publisher'] ?? 'No publisher available',
-      publishedDate: volumeInfo['publishedDate'] ?? 'No date available',
-      description: volumeInfo['description'] ?? 'No description available',
-      pageCount: volumeInfo['pageCount'] ?? 0,
-      categories: volumeInfo['categories'] != null
-          ? List<String>.from(volumeInfo['categories'])
-          : [],
-      averageRating: volumeInfo['averageRating'] != null
-          ? volumeInfo['averageRating'].toDouble()
-          : 0.0,
-      ratingsCount: volumeInfo['ratingsCount'] ?? 0,
-      coverUrl: volumeInfo['imageLinks'] != null
-          ? volumeInfo['imageLinks']['thumbnail']
-          : '', // Fallback se não houver capa
-    );
+        id: json['id'] as String,
+        title: volumeInfo['title'] as String,
+        authors: volumeInfo['authors'] != null
+            ? List<String>.from(volumeInfo['authors'])
+            : ['No authors available'],
+        publisher: volumeInfo['publisher'] ?? 'No publisher available',
+        publishedDate: volumeInfo['publishedDate'] ?? 'No date available',
+        description: volumeInfo['description'] ?? 'No description available',
+        pageCount: volumeInfo['pageCount'] ?? 0,
+        categories: volumeInfo['categories'] != null
+            ? List<String>.from(volumeInfo['categories'])
+            : [],
+        averageRating: volumeInfo['averageRating'] != null
+            ? volumeInfo['averageRating'].toDouble()
+            : 0.0,
+        ratingsCount: volumeInfo['ratingsCount'] ?? 0,
+        coverUrl: volumeInfo['imageLinks'] != null
+            ? volumeInfo['imageLinks']['thumbnail']
+            : '', // Fallback se não houver capa
+        amount: json['saleInfo']['listPrice'] != null
+            ? json['saleInfo']['listPrice']['amount'].toString()
+            : 'Free',
+        currencyCode: json['saleInfo']['listPrice'] != null &&
+                json['saleInfo']['listPrice']['currencyCode'] != null
+            ? json['saleInfo']['listPrice']['currencyCode']
+            : 'EUR');
   }
 }

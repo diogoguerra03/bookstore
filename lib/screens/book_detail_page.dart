@@ -95,6 +95,14 @@ class BookDetailPage extends StatelessWidget {
                             Text('Categories: ${book.categories.join(', ')}'),
                           ],
                         ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.attach_money, size: 20),
+                            const SizedBox(width: 8),
+                            Text('Price: ${book.amount} ${book.currencyCode}'),
+                          ],
+                        ),
                       ],
                     ),
                   ),
