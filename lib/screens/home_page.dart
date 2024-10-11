@@ -90,12 +90,32 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-  void _loadMoreSearchResults() {
+  bool isLoadingMore = false; // Flag para o botão de carregar mais
+
+  void _loadMoreSearchResults() async {
     setState(() {
-      _searchPage++;
-      searchResults = BookService().fetchBooks(
-          '$_searchFilter:${_searchController.text.trim()}', _searchPage);
+      isLoadingMore = true; // Mostra o círculo de carregamento no botão
     });
+
+    try {
+      List<Book> newBooks = await BookService().fetchBooks(
+          '$_searchFilter:${_searchController.text.trim()}',
+          _searchPage + 1 // Incrementa a página
+          );
+
+      List<Book> currentResults = await searchResults;
+
+      setState(() {
+        searchResults = Future.value([...currentResults, ...newBooks]);
+        _searchPage++; // Incrementa o número da página
+        isLoadingMore = false; // Esconde o círculo de carregamento
+      });
+    } catch (e) {
+      Logger().e("Error loading more search results: $e");
+      setState(() {
+        isLoadingMore = false;
+      });
+    }
   }
 
   void _clearSearch() {
@@ -184,72 +204,73 @@ class HomePageState extends State<HomePage> {
                       ],
                     ),
 
-                  const SizedBox(height: 18),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Text(
-                      'Categories',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                  if (!isSearching) ...[
+                    const SizedBox(height: 18),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10.0),
+                      child: Text(
+                        'Categories',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 10),
-                  // Imagens de categorias
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 4 / 2.5,
-                      ),
-                      itemCount: categoriesName.length,
-                      itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => GenrePage(
-                                  genre: categoriesName[index],
+                    const SizedBox(height: 10),
+                    // Imagens de categorias
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 4 / 2.5,
+                        ),
+                        itemCount: categoriesName.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => GenrePage(
+                                    genre: categoriesName[index],
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                image: DecorationImage(
+                                  image: NetworkImage(categoriesImage[index]),
+                                  fit: BoxFit.cover,
+                                  colorFilter: ColorFilter.mode(
+                                    Colors.black.withOpacity(0.3),
+                                    BlendMode.darken,
+                                  ),
                                 ),
                               ),
-                            );
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(15),
-                              image: DecorationImage(
-                                image: NetworkImage(categoriesImage[index]),
-                                fit: BoxFit.cover,
-                                colorFilter: ColorFilter.mode(
-                                  Colors.black.withOpacity(0.3),
-                                  BlendMode.darken,
+                              child: Center(
+                                child: Text(
+                                  categoriesName[index],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
                                 ),
                               ),
                             ),
-                            child: Center(
-                              child: Text(
-                                categoriesName[index],
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
+                  ]
                 ],
               ),
             ),
@@ -363,9 +384,13 @@ class HomePageState extends State<HomePage> {
                   return buildSearchBookItem(books[index]);
                 },
               ),
-              TextButton(
-                onPressed: _loadMoreSearchResults,
-                child: const Text('Load more results'),
+              Center(
+                child: isLoadingMore
+                    ? const CircularProgressIndicator() // Mostra o círculo de carregamento no botão
+                    : TextButton(
+                        onPressed: _loadMoreSearchResults,
+                        child: const Text('Load more results'),
+                      ),
               ),
             ],
           );

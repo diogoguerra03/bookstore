@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 import '../services/book_service.dart';
 import '../models/book_model.dart';
 import 'book_detail_page.dart'; // Certifique-se de importar a página de detalhes
@@ -32,7 +31,6 @@ class GenrePageState extends State<GenrePage> {
     });
 
     if (widget.genre != 'Newest' && widget.genre != 'Relevance') {
-      Logger().i('Loading more books for genre: ${widget.genre}');
       // Carrega livros por gênero
       BookService()
           .fetchBooks('subject:${widget.genre}', currentPage)
@@ -49,7 +47,6 @@ class GenrePageState extends State<GenrePage> {
         // Tratar erros, mostrar mensagem de erro se necessário
       });
     } else {
-      Logger().i('TESTE');
       // Carrega livros para Newest ou Relevance
       BookService()
           .fetchBooks('orderBy:${widget.genre}', currentPage)
