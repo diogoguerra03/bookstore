@@ -4,11 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:logger/logger.dart'; // Para logs
-import '../models/book_model.dart'; // Importa o modelo de livro
+import 'package:logger/logger.dart';
+import '../models/book_model.dart';
 
 class EditPlaylistPage extends StatefulWidget {
-  final String playlistId; // Agora recebe o ID da playlist
+  final String playlistId;
   final String playlistName;
   final String? imageUrl;
 

@@ -11,6 +11,7 @@ class BookDetailPage extends StatelessWidget {
 
   BookDetailPage({super.key, required this.book});
 
+  // Função para verificar se a URL pode ser aberta
   void _showPlaylistDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -288,6 +289,7 @@ class PlaylistDialogState extends State<PlaylistDialog> {
     _loadPlaylists();
   }
 
+  // Carrega as playlists do utilizador
   Future<void> _loadPlaylists() async {
     try {
       final FirebaseAuth auth = FirebaseAuth.instance;
@@ -300,6 +302,7 @@ class PlaylistDialogState extends State<PlaylistDialog> {
         Map<String, dynamic> playlists =
             Map<String, dynamic>.from(snapshot.value as Map);
 
+        // Itera sobre as playlists e adiciona ao mapa
         for (String key in playlists.keys) {
           _selectedPlaylists[key] = false;
           _playlistNames[key] = playlists[key]['name'] ?? 'Unnamed Playlist';
@@ -313,7 +316,6 @@ class PlaylistDialogState extends State<PlaylistDialog> {
 
           _playlistDisabled[key] = booksSnapshot.exists;
 
-          // Certifique-se de que o widget ainda está montado antes de chamar setState
           if (!mounted) return;
         }
       }
@@ -364,7 +366,6 @@ class PlaylistDialogState extends State<PlaylistDialog> {
           });
         }
 
-        // Certifique-se de que o widget ainda está montado antes de chamar setState
         if (!mounted) return;
       }
 

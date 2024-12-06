@@ -6,10 +6,10 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login.dart';
 import '../../widgets/bottom_nav_bar.dart';
-import 'edit_profile_page.dart'; // A nova página para editar o perfil
+import 'edit_profile_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import '../library_page.dart'; // A página Library
+import '../library_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -33,7 +33,7 @@ class ProfilePageState extends State<ProfilePage> {
     _loadPlaylistStatistics();
   }
 
-  // Função para carregar o UID e os dados do usuário
+  // Função para carregar o UID e os dados do utilizador
   void _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -142,6 +142,7 @@ class ProfilePageState extends State<ProfilePage> {
     );
   }
 
+// Lista os livros adicionados recentemente
   Future<List<Map<String, dynamic>>> _loadRecentActivity() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final DatabaseReference ref =
@@ -150,8 +151,10 @@ class ProfilePageState extends State<ProfilePage> {
 
     List<Map<String, dynamic>> recentActivity = [];
     if (snapshot.exists) {
-      Map<dynamic, dynamic> playlists = snapshot.value as Map<dynamic, dynamic>;
+      Map<dynamic, dynamic> playlists =
+          snapshot.value as Map<dynamic, dynamic>; // Obtém as playlists
 
+      // Itera sobre as playlists e livros para encontrar os mais recentes
       playlists.forEach((playlistId, playlistData) {
         if (playlistData.containsKey('books')) {
           Map<dynamic, dynamic> books =
@@ -205,7 +208,7 @@ class ProfilePageState extends State<ProfilePage> {
         child: SingleChildScrollView(
           child: Column(
             children: <Widget>[
-              // Avatar e informações do usuário
+              // Avatar e informações do utilizador
               CircleAvatar(
                 radius: 75,
                 backgroundImage:

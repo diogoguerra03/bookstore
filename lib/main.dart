@@ -37,10 +37,7 @@ class MyApp extends StatelessWidget {
   final bool
       isOnline; // Adiciona uma propriedade para verificar se o utilizador está online
 
-  const MyApp(
-      {super.key,
-      required this.isLoggedIn,
-      required this.isOnline}); // Uso de super parâmetros e const
+  const MyApp({super.key, required this.isLoggedIn, required this.isOnline});
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +51,7 @@ class MyApp extends StatelessWidget {
           ? isLoggedIn
               ? const HomePage()
               : const LoginPage()
-          : const NoConnectionPage(), // Adiciona uma condição para verificar se o utilizador está online
+          : const NoConnectionPage(),
     );
   }
 }

@@ -9,11 +9,11 @@ class Book {
   final List<String> categories;
   final double averageRating;
   final int ratingsCount;
-  final String coverUrl; // Adicionado o campo coverUrl
+  final String coverUrl;
   final String amount;
-  final String currencyCode;
-  final String saleability;
-  final String saleInfoUrl; // URL para a página de venda do livro
+  final String currencyCode; // Moeda
+  final String saleability; // Indica se o livro está à venda
+  final String saleInfoUrl; // URL de venda
 
   Book({
     required this.id,
@@ -26,11 +26,11 @@ class Book {
     required this.categories,
     required this.averageRating,
     required this.ratingsCount,
-    required this.coverUrl, // Inicialização do campo coverUrl
+    required this.coverUrl,
     this.amount = '0.0',
     this.currencyCode = 'EUR',
     this.saleability = 'NOT_FOR_SALE',
-    this.saleInfoUrl = '', // URL padrão vazio
+    this.saleInfoUrl = '',
   });
 
   // Função para transformar o JSON da API num objeto Book
@@ -63,9 +63,8 @@ class Book {
         currencyCode: json['saleInfo']['listPrice'] != null &&
                 json['saleInfo']['listPrice']['currencyCode'] != null
             ? json['saleInfo']['listPrice']['currencyCode']
-            : 'EUR',
+            : 'EUR', // Moeda padrão é o Euro
         saleability: json['saleInfo']['saleability'] ?? 'NOT_FOR_SALE',
-        saleInfoUrl: json['saleInfo']['buyLink'] ??
-            ''); // Adiciona o campo de URL de venda, se existir
+        saleInfoUrl: json['saleInfo']['buyLink'] ?? '');
   }
 }

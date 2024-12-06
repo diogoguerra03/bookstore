@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart'; // Para obter o diretório temporário
+import 'package:path_provider/path_provider.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -28,7 +28,7 @@ class SignUpPageState extends State<SignUpPage> {
   bool _obscureConfirmPassword = true;
 
   Future<File> loadAssetFile(String path) async {
-    // Obtém o diretório temporário
+    // Obtém a diretoria temporária
     final directory = await getTemporaryDirectory();
     final file = File('${directory.path}/favorites.png');
 
@@ -217,7 +217,7 @@ class SignUpPageState extends State<SignUpPage> {
                             );
 
                             String uid = userCredential
-                                .user!.uid; // Obtém o UID do usuário
+                                .user!.uid; // Obtém o UID do utilizador
 
                             // Adiciona o utilizador ao Firebase Realtime Database
                             await FirebaseDatabase.instance
@@ -241,14 +241,12 @@ class SignUpPageState extends State<SignUpPage> {
                               'name': 'Favorites',
                             });
 
-                            // Faz o upload da imagem da prateleira 'favorites' para o Firebase Storage
+                            // Faz o upload da imagem da bookshelf 'favorites' para o Firebase Storage
                             try {
                               // Carrega o arquivo das assets
                               File file = await loadAssetFile(
                                   'assets/images/favorites.png');
 
-                              // Faz o upload do arquivo para o Firebase Storage
-                              // Faz o upload da imagem da playlist "Favorites" para o Firebase Storage
                               await FirebaseStorage.instance
                                   .ref(
                                       'bookshelf/$uid/$playlistId') // Usando o ID da playlist

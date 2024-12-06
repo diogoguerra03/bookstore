@@ -222,7 +222,7 @@ class LibraryPageState extends State<LibraryPage> {
     }
   }
 
-  // Função para adicionar uma nova playlist com verificação de duplicata
+  // Função para adicionar uma nova playlist com verificação de duplicação
   Future<void> _addPlaylist() async {
     String? newPlaylistName = await _showAddPlaylistDialog();
     if (newPlaylistName != null && newPlaylistName.isNotEmpty) {

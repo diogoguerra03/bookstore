@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/book_service.dart';
 import '../models/book_model.dart';
-import 'book_detail_page.dart'; // Certifique-se de importar a página de detalhes
+import 'book_detail_page.dart';
 
 class GenrePage extends StatefulWidget {
   final String genre;
@@ -44,7 +44,6 @@ class GenrePageState extends State<GenrePage> {
         setState(() {
           isLoadingMore = false;
         });
-        // Tratar erros, mostrar mensagem de erro se necessário
       });
     } else {
       // Carrega livros para Newest ou Relevance
@@ -60,7 +59,6 @@ class GenrePageState extends State<GenrePage> {
         setState(() {
           isLoadingMore = false;
         });
-        // Tratar erros, mostrar mensagem de erro se necessário
       });
     }
   }
@@ -97,8 +95,8 @@ class GenrePageState extends State<GenrePage> {
                           vertical: 8.0, horizontal: 16.0),
                       child: ListTile(
                         leading: SizedBox(
-                          width: 50, // Definir largura da imagem
-                          height: 80, // Definir altura da imagem
+                          width: 50,
+                          height: 80,
                           child: Image.network(
                             coverUrl,
                             fit: BoxFit.cover,

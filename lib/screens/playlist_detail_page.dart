@@ -1,10 +1,10 @@
-import 'dart:async'; // Para usar debounce
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'edit_playlist_page.dart';
-import 'book_detail_page.dart'; // Importe a página de detalhes do livro
-import '../models/book_model.dart'; // Importe o modelo de livro
+import 'book_detail_page.dart';
+import '../models/book_model.dart';
 
 class PlaylistDetailPage extends StatefulWidget {
   final String playlistId;
@@ -204,8 +204,8 @@ class PlaylistDetailPageState extends State<PlaylistDetailPage> {
             pinned: true,
             floating: false,
             delegate: _SliverAppBarDelegate(
-              minHeight: 140.0, // Altura mínima da barra de pesquisa
-              maxHeight: 140.0, // Altura máxima da barra de pesquisa
+              minHeight: 140.0,
+              maxHeight: 140.0,
               child: Container(
                 color: Colors.white,
                 padding: const EdgeInsets.symmetric(

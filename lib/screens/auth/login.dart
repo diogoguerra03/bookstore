@@ -116,7 +116,7 @@ class LoginPageState extends State<LoginPage> {
                       onPressed: () async {
                         if (_formKey.currentState?.validate() ?? false) {
                           try {
-                            // Autentica o usuário com email e senha
+                            // Autentica o utilizador com email e senha
                             UserCredential userCredential = await FirebaseAuth
                                 .instance
                                 .signInWithEmailAndPassword(
@@ -124,10 +124,10 @@ class LoginPageState extends State<LoginPage> {
                               password: _password,
                             );
 
-                            // Busca o UID do usuário
+                            // Obtém o UID do utilizador
                             String uid = userCredential.user!.uid;
 
-                            // Busca o username na Realtime Database
+                            // obtém o username na Realtime Database
                             DatabaseReference ref =
                                 FirebaseDatabase.instance.ref('users/$uid');
                             final snapshot = await ref.once();

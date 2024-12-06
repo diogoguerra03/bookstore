@@ -3,7 +3,7 @@ import '../services/book_service.dart';
 import '../models/book_model.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'genre_page.dart';
-import 'book_detail_page.dart'; // Certifique-se de que este nome está correto
+import 'book_detail_page.dart';
 import 'package:logger/logger.dart';
 import 'auth/profile_page.dart';
 import 'library_page.dart';

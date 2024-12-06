@@ -4,9 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io'; // Para manipulação de arquivos
-import 'package:logger/logger.dart'; // Para logs
+import 'dart:io';
+import 'package:logger/logger.dart';
 
+// Página para editar o perfil do utilizador
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
 
@@ -14,41 +15,42 @@ class EditProfilePage extends StatefulWidget {
   EditProfilePageState createState() => EditProfilePageState();
 }
 
+// Estado da página de edição do perfil
 class EditProfilePageState extends State<EditProfilePage> {
   // ignore: unused_field
   final _formKey = GlobalKey<FormState>();
   String _username = '';
-  String _avatarUrl = ''; // URL da imagem do avatar
+  String _avatarUrl = '';
   String _currentPassword = '';
   String _newPassword = '';
   String _confirmNewPassword = '';
   bool _isLoading = true;
-  bool _obscureCurrentPassword = true; // Para mostrar/ocultar a senha atual
-  bool _obscureNewPassword = true; // Para mostrar/ocultar a nova senha
+  bool _obscureCurrentPassword = true; // Para mostrar/ocultar a password atual
+  bool _obscureNewPassword = true; // Para mostrar/ocultar a nova password
   bool _obscureConfirmPassword =
-      true; // Para mostrar/ocultar a confirmação da senha
+      true; // Para mostrar/ocultar a confirmação da password
   File? _imageFile; // Armazenar o arquivo da imagem selecionada
 
   String? _usernameErrors; // Mensagem de erro para o campo de username
-  String? _currentPasswordErrors; // Mensagem de erro para o campo de senha
-  String? _newPasswordErrors; // Mensagem de erro para o campo de nova senha
+  String? _currentPasswordErrors; // Mensagem de erro para o campo de password
+  String? _newPasswordErrors; // Mensagem de erro para o campo de nova password
   String?
-      _confirmNewPasswordErrors; // Mensagem de erro para o campo de confirmação da nova senha
+      _confirmNewPasswordErrors; // Mensagem de erro para o campo de confirmação da nova password
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _loadUserData(); // Carregar os dados do utilizador
   }
 
-  // Carregar dados do usuário
+  // Carregar dados do utilizador
   void _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? uid =
         prefs.getString('uid'); // Recupera o UID do Shared Preferences
 
     if (uid != null) {
-      // Busca os dados do usuário na Realtime Database
+      // Obtém os dados do utilizador na Realtime Database
       DatabaseReference ref = FirebaseDatabase.instance.ref('users/$uid');
       final snapshot = await ref.once();
 
@@ -56,18 +58,16 @@ class EditProfilePageState extends State<EditProfilePage> {
         setState(() {
           _username = snapshot.snapshot.child('username').value.toString();
 
-          // Aqui você verifica se a URL do avatar existe
+          // Verificação se o URL do avatar existe
           var avatarUrlValue = snapshot.snapshot.child('avatarUrl').value;
-          _avatarUrl = avatarUrlValue != null
-              ? avatarUrlValue.toString()
-              : ''; // Carregar a URL do avatar se disponível
+          _avatarUrl = avatarUrlValue != null ? avatarUrlValue.toString() : '';
           _isLoading = false;
         });
       }
     }
   }
 
-  // Função para atualizar os dados do usuário
+  // Função para atualizar os dados do utilizador
   void _updateUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
 
@@ -84,7 +84,7 @@ class EditProfilePageState extends State<EditProfilePage> {
       return;
     }
 
-    // Verifica se o usuário quer alterar a senha
+    // Verifica se o utilizador quer alterar a senha
     if (_currentPassword.isNotEmpty ||
         _newPassword.isNotEmpty ||
         _confirmNewPassword.isNotEmpty) {
@@ -103,16 +103,16 @@ class EditProfilePageState extends State<EditProfilePage> {
       }
 
       try {
-        // buscar o email do usuário
+        // obtém o email do utilizador
         String email = user.email!;
-        // Reautentica o usuário com a senha atual
+        // Reautentica o utilizador com a password atual
         UserCredential userCredential =
             await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: email,
           password: _currentPassword,
         );
 
-        // Se a autenticação for bem-sucedida, atualiza a senha no Firebase Auth
+        // Se a autenticação for bem-sucedida, atualiza a password no Firebase Auth
         await userCredential.user!.updatePassword(_newPassword);
       } catch (e) {
         // Trata o erro de autenticação
@@ -221,7 +221,7 @@ class EditProfilePageState extends State<EditProfilePage> {
           IconButton(
             icon: const Icon(Icons.check),
             onPressed:
-                _updateUserData, // Chama a função para atualizar os dados do usuário
+                _updateUserData, // Chama a função para atualizar os dados do utilizador
           ),
         ],
       ),
@@ -233,7 +233,7 @@ class EditProfilePageState extends State<EditProfilePage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    // Exibe a imagem do usuário ou um avatar padrão
+                    // Exibe a imagem do utilizador ou um avatar padrão
                     GestureDetector(
                       onTap: _pickImage, // Torna o CircleAvatar clicável
                       child: CircleAvatar(
@@ -278,7 +278,7 @@ class EditProfilePageState extends State<EditProfilePage> {
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: 15, horizontal: 20),
                         prefixIcon:
-                            const Icon(Icons.person), // Ícone de usuário
+                            const Icon(Icons.person), // Ícone de utilizador
                         errorText: _usernameErrors,
                       ),
                       onChanged: (value) {

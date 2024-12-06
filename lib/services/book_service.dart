@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http; // Para fazer requisições HTTP
 import '../models/book_model.dart'; // Modelo dos livros
 
 class BookService {
-  final String apiKey = "AIzaSyDFKIn1VLkrLA90_pivMJlpdylD5flt0Fw";
+  final String apiKey =
+      "AIzaSyDFKIn1VLkrLA90_pivMJlpdylD5flt0Fw"; // Chave de API
 
   // Função para buscar livros com base numa query personalizada e com paginação
   Future<List<Book>> fetchBooks(String query, int page) async {
@@ -27,7 +28,7 @@ class BookService {
     }
   }
 
-  // Função para buscar detalhes do livro com base no ID
+  // Função para obter detalhes do livro com base no ID
   Future<Book> fetchBookDetails(String bookId) async {
     final String apiUrl =
         "https://www.googleapis.com/books/v1/volumes/$bookId?key=$apiKey";
